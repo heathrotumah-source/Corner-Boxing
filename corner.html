@@ -1,0 +1,2672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Corner — Boxing Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0f1a; --bg2:#080b14; --card:#141b2c; --card2:#1a2236; --line:#232c42;
+    --blue:#4f8ef7; --blue-dim:#2f5fc4; --gold:#f3c94f; --teal:#34d1b6; --purple:#a78bfa;
+    --text:#eef1f7; --grey:#8993ab; --red:#e5484d; --green:#34d399;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;height:100%;}
+  .app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative;}
+
+  .header{padding:18px 20px 6px;display:flex;justify-content:space-between;align-items:flex-start;}
+  .greeting{font-size:22px;font-weight:800;}
+  .greeting span{color:var(--blue);}
+  .subgreeting{font-size:12.5px;color:var(--grey);margin-top:2px;}
+  .streak-pill{display:flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:7px 12px;font-weight:700;font-size:14px;}
+
+  .view{display:none;flex:1;flex-direction:column;}
+  .view.active{display:flex;}
+  .tabpane{display:none;}
+  .tabpane.active{display:block;}
+  .pad{padding:14px 20px 110px;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;}
+  .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--grey);margin:18px 0 10px;}
+  .section-title:first-child{margin-top:4px;}
+
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;}
+  .stat-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;}
+  .stat-num{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--blue);line-height:1;}
+  .stat-lbl{font-size:11px;color:var(--grey);margin-top:4px;}
+
+  .bigbtn{width:100%;padding:16px;border:none;border-radius:14px;background:var(--blue);color:#fff;font-weight:700;font-size:15.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .bigbtn.secondary{background:var(--card2);border:1px solid var(--line);color:var(--text);}
+  .bigbtn.gold{background:var(--gold);color:#1a1a1a;}
+
+  .pill-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .pill{flex:1;min-width:80px;padding:11px 9px;background:var(--card2);border:1px solid var(--line);border-radius:10px;text-align:center;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--text);}
+  .pill.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .pill small{display:block;font-size:10.5px;color:var(--grey);margin-top:2px;font-weight:400;}
+  .pill.active small{color:rgba(255,255,255,.8);}
+
+  .voice-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
+  .voice-pill{flex-shrink:0;padding:9px 13px;background:var(--card2);border:1px solid var(--line);border-radius:12px;font-size:12.5px;cursor:pointer;white-space:nowrap;}
+  .voice-pill.active{background:var(--teal);color:#06281f;border-color:var(--teal);font-weight:700;}
+
+  .tpl-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;cursor:pointer;}
+  .tpl-card:active{border-color:var(--blue);}
+  .tpl-top{display:flex;justify-content:space-between;align-items:baseline;}
+  .tpl-name{font-size:17px;font-weight:700;}
+  .tpl-dur{font-size:12.5px;color:var(--gold);font-weight:700;background:rgba(243,201,79,.12);padding:3px 9px;border-radius:8px;}
+  .tpl-desc{font-size:13px;color:var(--grey);margin-top:6px;line-height:1.45;}
+  .tpl-meta{display:flex;gap:12px;margin-top:10px;font-size:10.5px;color:var(--grey);}
+  .tpl-meta b{color:var(--text);}
+  .tpl-goals{margin-top:8px;font-size:11.5px;color:var(--blue);}
+  .tpl-bar{height:4px;background:var(--line);border-radius:3px;margin-top:10px;overflow:hidden;display:flex;}
+  .tpl-bar div{height:100%;}
+
+  .stepper{display:flex;align-items:center;justify-content:space-between;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:6px;}
+  .stepper-val{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.04em;}
+  .stepper-val small{font-family:'Inter',sans-serif;font-size:10.5px;color:var(--grey);display:block;margin-top:-3px;font-weight:400;}
+  .stepper button{width:38px;height:38px;border-radius:8px;border:none;background:var(--line);color:var(--text);font-size:18px;font-weight:700;cursor:pointer;}
+
+  textarea#smart-input{width:100%;min-height:90px;background:var(--card2);border:1px solid var(--line);border-radius:12px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:12px;resize:vertical;}
+  .smart-examples{font-size:11.5px;color:var(--grey);margin-top:8px;line-height:1.6;}
+  .smart-examples span{color:var(--text);}
+  .preview-round{display:flex;justify-content:space-between;align-items:center;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 13px;margin-bottom:6px;font-size:13px;}
+  .preview-round .pt{color:var(--blue);font-weight:600;}
+  .preview-round .pi{color:var(--grey);font-size:11px;}
+  .breakdown-row{background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:6px;}
+  .breakdown-row .btop{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;font-weight:700;}
+  .breakdown-row .bdot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:7px;}
+  .breakdown-row .bmeta{font-size:11.5px;color:var(--grey);margin-top:5px;display:flex;gap:10px;flex-wrap:wrap;}
+  .breakdown-row .bmeta b{color:var(--text);}
+
+  .lib-level-row{display:flex;gap:8px;margin-bottom:14px;}
+  .lib-level{flex:1;text-align:center;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card2);font-size:12.5px;cursor:pointer;color:var(--grey);}
+  .lib-level.active{background:var(--gold);color:#1a1a1a;border-color:var(--gold);font-weight:700;}
+  .combo-row{display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:7px;}
+  .combo-row .left{flex:1;}
+  .combo-row .num{font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--gold);}
+  .combo-row .nm{font-size:11.5px;color:var(--grey);margin-top:1px;}
+  .combo-row .tags{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;}
+  .tag{font-size:9px;text-transform:uppercase;letter-spacing:.05em;background:var(--line);color:var(--grey);padding:2px 6px;border-radius:5px;}
+  .del-btn{background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;padding:4px 8px;}
+  .add-card{background:var(--card2);border:1px dashed var(--line);border-radius:14px;padding:14px;margin-top:14px;}
+  .add-card input[type=text]{width:100%;padding:11px;background:var(--card);border:1px solid var(--line);border-radius:9px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;margin-bottom:8px;}
+  .tag-pick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .tag-opt{padding:6px 10px;border-radius:8px;background:var(--card);border:1px solid var(--line);font-size:10.5px;text-transform:uppercase;color:var(--grey);cursor:pointer;}
+  .tag-opt.on{background:var(--blue);color:#fff;border-color:var(--blue);}
+
+  .streak-box{background:linear-gradient(135deg,#1c2742,var(--card));border:1px solid var(--blue);border-radius:16px;padding:20px;text-align:center;margin-bottom:14px;}
+  .streak-num{font-family:'Bebas Neue',sans-serif;font-size:46px;color:var(--blue);line-height:1;}
+  .badge-grid{display:flex;flex-wrap:wrap;gap:8px;}
+  .badge{flex:1;min-width:95px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;opacity:.4;}
+  .badge.earned{opacity:1;border-color:var(--gold);}
+  .badge .ic{font-size:20px;}
+  .badge .bl{font-size:10px;color:var(--grey);margin-top:3px;}
+  .history-row{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:7px;}
+  .history-row .htop{display:flex;justify-content:space-between;font-size:13px;font-weight:600;}
+  .history-row .hsub{font-size:11px;color:var(--grey);margin-top:3px;}
+  .empty-state{text-align:center;color:var(--grey);font-size:13px;padding:30px 10px;line-height:1.6;}
+
+  /* bottom nav */
+  .bottomnav{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:rgba(11,15,26,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;padding:9px 10px calc(9px + env(safe-area-inset-bottom));z-index:50;}
+  .navitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:14px;cursor:pointer;color:var(--grey);}
+  .navitem.active{background:var(--card2);color:var(--text);}
+  .navitem .ic{font-size:19px;}
+  .navitem .lbl{font-size:9.5px;font-weight:600;}
+
+  /* workout */
+  .workout{flex:1;display:flex;flex-direction:column;padding:18px 20px;}
+  .status-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .round-tag{font-size:12.5px;color:var(--grey);font-weight:600;}
+  .round-tag b{color:var(--text);}
+  .round-type-tag{font-size:15px;font-weight:700;color:var(--blue);margin-top:2px;}
+  .round-objective{font-size:11.5px;color:var(--grey);margin-top:1px;}
+  .exit-btn{background:none;border:1px solid var(--line);color:var(--grey);border-radius:8px;padding:7px 13px;font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;}
+
+  .intensity-bar{height:5px;background:var(--line);border-radius:3px;margin:8px 0 0;overflow:hidden;}
+  .intensity-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold),var(--red));}
+
+  .ring{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+  .phase-label{font-size:15px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px;font-weight:700;}
+  .phase-label.work{color:var(--red);}
+  .phase-label.rest{color:var(--green);}
+  .phase-label.countdown{color:var(--gold);}
+  .timer{font-family:'Bebas Neue',sans-serif;font-size:84px;line-height:1;}
+  .timer.rest{color:var(--green);}
+  .timer.countdown{color:var(--gold);font-size:120px;}
+
+  .combo-card{margin-top:18px;width:100%;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px 16px;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .combo-nums{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:.05em;color:var(--gold);}
+  .combo-name{font-size:13px;color:var(--grey);margin-top:7px;}
+
+  .controls{display:flex;gap:10px;margin-top:18px;}
+  .ctrl-btn{flex:1;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+  .ctrl-btn.primary{background:var(--blue);border-color:var(--blue);}
+
+  .progress-dots{display:flex;gap:5px;justify-content:center;margin-top:14px;flex-wrap:wrap;max-width:280px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--line);}
+  .dot.done{background:var(--blue);}
+  .dot.current{background:var(--gold);}
+
+  .done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px;text-align:center;}
+  .done .big{font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--gold);letter-spacing:.04em;}
+  .done p{color:var(--grey);font-size:14px;margin-top:6px;}
+  .done button{margin-top:24px;padding:15px 28px;border:none;border-radius:12px;background:var(--blue);color:#fff;font-weight:700;font-size:15px;cursor:pointer;}
+  .survey{width:100%;text-align:left;margin-top:22px;}
+  .survey .q{font-size:13px;color:var(--grey);margin-bottom:8px;}
+  .survey .opts{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+  .survey .opt{padding:9px 14px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:13px;cursor:pointer;}
+  .survey .opt.sel{background:var(--gold);color:#1a1a1a;border-color:var(--gold);font-weight:700;}
+
+  .hint{font-size:11.5px;color:var(--grey);text-align:center;padding:12px 4px 0;line-height:1.5;}
+
+  /* ── ONBOARDING ── */
+  #onboarding{position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto;display:none;}
+  #onboarding.show{display:block;}
+  .ob-wrap{padding:26px 20px 48px;max-width:480px;margin:0 auto;}
+  .ob-logo{font-family:'Bebas Neue',sans-serif;font-size:38px;margin-bottom:4px;}
+  .ob-logo span{color:var(--gold);}
+  .ob-intro{font-size:13px;color:var(--grey);margin-bottom:20px;line-height:1.55;}
+  .ob-sec{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--grey);margin:18px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--line);}
+  .ob-sec:first-of-type{margin-top:0;}
+  .ob-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .ob-pc{background:var(--card);border:.5px solid var(--line);border-radius:10px;padding:10px;}
+  .ob-pc svg{display:block;width:100%;margin:6px 0 4px;}
+  .ob-pn{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--blue);line-height:1;}
+  .ob-pname{font-size:12px;font-weight:600;color:var(--text);margin:2px 0;}
+  .ob-pcue{font-size:10.5px;color:var(--grey);line-height:1.4;}
+  .ob-rows{display:flex;flex-direction:column;gap:7px;}
+  .ob-row{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:.5px solid var(--line);border-radius:8px;padding:9px 11px;}
+  .ob-ic{font-size:17px;flex-shrink:0;margin-top:1px;}
+  .ob-rn{font-size:12px;font-weight:600;color:var(--text);}
+  .ob-rc{font-size:10.5px;color:var(--grey);margin-top:1px;line-height:1.4;}
+  .ob-note{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--purple);margin-top:14px;line-height:1.5;}
+  .ob-cta{width:100%;padding:17px;border:none;border-radius:12px;background:var(--blue);color:#fff;font-weight:700;font-size:16px;cursor:pointer;margin-top:22px;font-family:'Inter',sans-serif;}
+  /* ── IN-WORKOUT REF ── */
+  #ref-overlay{position:fixed;inset:0;background:rgba(11,15,26,.94);z-index:150;overflow-y:auto;display:none;}
+  #ref-overlay.show{display:block;}
+  .ref-wrap{padding:18px 20px 40px;max-width:480px;margin:0 auto;}
+  .ref-close{display:flex;justify-content:flex-end;margin-bottom:12px;}
+  .ref-close button{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .ref-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px;}
+  .ref-cell{background:var(--card);border:.5px solid var(--line);border-radius:8px;padding:8px;text-align:center;}
+  .ref-num{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--blue);line-height:1;}
+  .ref-nm{font-size:10.5px;color:var(--grey);}
+  .ref-hint{font-size:10.5px;color:var(--grey);text-align:center;line-height:1.6;}
+  .ref-sec{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--grey);margin:14px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--line);}
+  /* ref button on combo card */
+  .combo-card{position:relative;}
+  .ref-qbtn{position:absolute;top:10px;right:12px;background:none;border:1px solid var(--line);color:var(--grey);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;}
+  /* ── LIB TABS ── */
+  .lib-tab-row{display:flex;gap:6px;margin-bottom:12px;}
+  .lib-tab-btn{flex:1;text-align:center;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card2);font-size:12px;cursor:pointer;color:var(--grey);font-family:'Inter',sans-serif;}
+  .lib-tab-btn.active{border-color:var(--blue);color:var(--blue);font-weight:600;}
+
+  /* ── LIGHT MODE ── */
+  body.light{--bg:#f3f5fa;--bg2:#ffffff;--card:#ffffff;--card2:#eaeef7;--line:#d6dcea;--text:#141925;--grey:#5b6479;}
+  body.light .bottomnav{background:rgba(247,249,253,.94);}
+  body.light #onboarding, body.light #ref-overlay{background:var(--bg);}
+  .theme-btn{background:var(--card);border:1px solid var(--line);border-radius:20px;width:38px;height:38px;font-size:16px;cursor:pointer;margin-left:8px;}
+  .header-right{display:flex;align-items:center;}
+
+  /* ── XP / CHALLENGE ── */
+  .xp-box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:12px;}
+  .xp-top{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--grey);}
+  .xp-top b{color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.04em;}
+  .xp-bar{height:7px;background:var(--line);border-radius:4px;margin-top:8px;overflow:hidden;}
+  .xp-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--gold));border-radius:4px;}
+  .challenge-card{background:linear-gradient(135deg,rgba(243,201,79,.10),var(--card));border:1px solid rgba(243,201,79,.45);border-radius:14px;padding:13px 14px;margin-bottom:12px;}
+  .ch-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);}
+  .ch-label{font-size:13.5px;font-weight:600;margin-top:4px;}
+  .ch-meta{font-size:11px;color:var(--grey);margin-top:6px;}
+
+  /* ── RESUME BANNER ── */
+  .resume-banner{background:linear-gradient(135deg,rgba(79,142,247,.14),var(--card));border:1px solid var(--blue);border-radius:14px;padding:13px 14px;margin-bottom:12px;display:none;}
+  .resume-banner.show{display:block;}
+  .resume-banner .rb-t{font-size:13.5px;font-weight:700;}
+  .resume-banner .rb-s{font-size:11.5px;color:var(--grey);margin:3px 0 10px;}
+  .resume-row{display:flex;gap:8px;}
+  .resume-row button{flex:1;padding:11px;border-radius:10px;border:none;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;cursor:pointer;}
+  .rb-go{background:var(--blue);color:#fff;}
+  .rb-x{background:var(--card2);border:1px solid var(--line);color:var(--grey);}
+
+  /* ── PROFILE CARD ── */
+  .profile-line{display:flex;justify-content:space-between;align-items:center;padding:9px 0;}
+  .profile-line + .profile-line{border-top:1px solid var(--line);}
+  .profile-line .pl{font-size:13px;color:var(--grey);}
+  .profile-line input{background:transparent;border:none;color:var(--text);font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;text-align:right;outline:none;max-width:55%;}
+  .profile-line select{background:var(--card2);border:1px solid var(--line);color:var(--text);font-family:'Inter',sans-serif;font-size:12.5px;padding:6px 9px;border-radius:8px;}
+
+  /* ── FAVORITES ── */
+  .fav-btn{background:none;border:none;font-size:18px;cursor:pointer;padding:4px 6px;color:var(--line);}
+  .fav-btn.on{color:var(--gold);}
+  .combo-row.locked{opacity:.45;}
+  .lock-tag{font-size:9px;background:rgba(243,201,79,.15);color:var(--gold);padding:2px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.05em;}
+
+  /* ── CALENDAR ── */
+  .cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13.5px;font-weight:700;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-dow{font-size:9.5px;color:var(--grey);text-align:center;text-transform:uppercase;letter-spacing:.05em;padding:2px 0;}
+  .cal-cell{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;font-size:11px;color:var(--grey);position:relative;}
+  .cal-cell.has{background:var(--card2);color:var(--text);font-weight:600;}
+  .cal-cell.has::after{content:'';width:5px;height:5px;border-radius:50%;background:var(--gold);margin-top:2px;}
+  .cal-cell.today{border:1px solid var(--blue);}
+
+  /* ── WORKOUT: focus mode / bigger targets / landscape ── */
+  .controls .ctrl-btn{padding:18px 12px;font-size:15px;}
+  .focus-btn{background:none;border:1px solid var(--line);color:var(--grey);border-radius:8px;padding:7px 11px;font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;margin-right:8px;}
+  #view-workout.focus .round-objective, #view-workout.focus .progress-dots, #view-workout.focus .intensity-bar{display:none;}
+  #view-workout.focus .timer{font-size:104px;}
+  #view-workout.focus .combo-nums{font-size:44px;}
+  @media (orientation:landscape) and (max-height:520px){
+    .workout{flex-direction:row;flex-wrap:wrap;align-items:center;gap:0 18px;padding:10px 18px;}
+    .status-row{width:100%;margin-bottom:2px;}
+    .intensity-bar{width:100%;}
+    .ring{flex:1;min-width:220px;}
+    .timer{font-size:64px;}
+    .combo-card{margin-top:8px;padding:12px;min-height:64px;}
+    .combo-nums{font-size:26px;}
+    .controls{flex-direction:column;width:150px;margin-top:0;}
+    .progress-dots{display:none;}
+    .end-of-workout-btn,.workout>.ctrl-btn{width:150px;}
+  }
+
+  /* ── ANIMATED DEMOS (tap to play) ── */
+  .demo-fig{position:relative;cursor:pointer;}
+  .demo-fig .play-badge{position:absolute;top:8px;right:9px;font-size:10px;color:var(--grey);border:1px solid var(--line);border-radius:5px;padding:2px 6px;}
+  .demo-fig .mv{transform-box:view-box;}
+  .demo-fig.play .mv{animation-duration:1.15s;animation-iteration-count:2;animation-timing-function:ease-in-out;}
+  .demo-fig.play .mv-ext{animation-name:kExt;}
+  .demo-fig.play .mv-hookl{animation-name:kHookL;}
+  .demo-fig.play .mv-hookr{animation-name:kHookR;}
+  .demo-fig.play .mv-up{animation-name:kUp;}
+  .demo-fig.play .mv-slipl{animation-name:kSlipL;}
+  .demo-fig.play .mv-slipr{animation-name:kSlipR;}
+  .demo-fig.play .mv-roll{animation-name:kRoll;}
+  .demo-fig.play .mv-pull{animation-name:kPull;}
+  .demo-fig.play .mv-duck{animation-name:kDuck;}
+  .demo-fig.play .mv-block{animation-name:kBlock;}
+  .demo-fig.play .mv-parry{animation-name:kParry;}
+  .demo-fig.play .mv-stepin{animation-name:kStepIn;}
+  .demo-fig.play .mv-stepback{animation-name:kStepBack;}
+  .demo-fig.play .mv-pivot{animation-name:kPivot;}
+  .demo-fig.play .mv-feint{animation-name:kFeint;}
+  .demo-fig.play .mv-shfeint{animation-name:kShFeint;}
+  .demo-fig.play .mv-level{animation-name:kLevel;}
+  .demo-fig.play .mv-in{animation-name:kIncoming;animation-iteration-count:2;}
+  @keyframes kExt{0%,100%{transform:scale(.32);}42%,58%{transform:scale(1);}}
+  @keyframes kHookL{0%,100%{transform:rotate(-62deg);}42%,58%{transform:rotate(16deg);}}
+  @keyframes kHookR{0%,100%{transform:rotate(62deg);}42%,58%{transform:rotate(-16deg);}}
+  @keyframes kUp{0%,100%{transform:translateY(15px) scale(.5);}42%,58%{transform:translateY(0) scale(1);}}
+  @keyframes kSlipL{0%,100%{transform:translateX(0);}38%,62%{transform:translateX(-9px);}}
+  @keyframes kSlipR{0%,100%{transform:translateX(0);}38%,62%{transform:translateX(9px);}}
+  @keyframes kRoll{0%,100%{transform:translate(0,0);}28%{transform:translate(-6px,11px);}52%{transform:translate(7px,11px);}74%{transform:translate(7px,1px);}}
+  @keyframes kPull{0%,100%{transform:rotate(0);}38%,62%{transform:rotate(15deg);}}
+  @keyframes kDuck{0%,100%{transform:translateY(0);}38%,62%{transform:translateY(14px);}}
+  @keyframes kBlock{0%,100%{transform:translateY(0);}32%,66%{transform:translateY(-7px);}}
+  @keyframes kParry{0%,100%{transform:translate(0,0) rotate(0);}38%{transform:translate(-7px,6px) rotate(-22deg);}60%{transform:translate(-2px,2px) rotate(-6deg);}}
+  @keyframes kStepIn{0%,100%{transform:translateX(0);}38%,62%{transform:translateX(-11px);}}
+  @keyframes kStepBack{0%,100%{transform:translateX(0);}38%,62%{transform:translateX(11px);}}
+  @keyframes kPivot{0%,100%{transform:rotate(0);}38%,62%{transform:rotate(-36deg);}}
+  @keyframes kFeint{0%,100%{transform:scale(.32);}22%{transform:scale(.62);}38%{transform:scale(.34);}58%{transform:scale(.66);}78%{transform:scale(.34);}}
+  @keyframes kShFeint{0%,100%{transform:rotate(0);}28%{transform:rotate(9deg);}52%{transform:rotate(-4deg);}}
+  @keyframes kLevel{0%,100%{transform:rotate(0) scale(.34);}28%{transform:rotate(34deg) scale(.66);}55%,70%{transform:rotate(-6deg) scale(1);}}
+  @keyframes kIncoming{0%,100%{opacity:0;transform:translateX(-13px);}30%,55%{opacity:1;transform:translateX(0);}}
+
+  /* ── SETTINGS / PROFILE OVERLAYS ── */
+  #settings-overlay, #profile-overlay{position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto;display:none;}
+  #settings-overlay.show, #profile-overlay.show{display:block;}
+  body.light #settings-overlay, body.light #profile-overlay{background:var(--bg);}
+
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ONBOARDING OVERLAY -->
+<div id="onboarding">
+<div class="ob-wrap">
+<div class="ob-logo">CORNER<span>.</span></div>
+<div class="ob-intro">Your boxing coach in your pocket. Before your first session, here's the numbering system — everything in the app is built around it.</div>
+<div class="ob-sec">The six punches — tap any card to play the movement</div>
+<div class="ob-grid" id="ob-punch-grid"></div>
+<div class="ob-sec">Defense — tap to play</div>
+<div class="ob-grid" id="ob-def-grid"></div>
+<div class="ob-sec">Footwork — tap to play</div>
+<div class="ob-grid" id="ob-foot-grid"></div>
+<div class="ob-sec">Feints — tap to play</div>
+<div class="ob-grid" id="ob-feint-grid"></div>
+<div class="ob-note">Southpaw? The numbers stay the same — 1 is always your jab, 2 your cross. Just mirror "lead/rear" and "left/right" in the descriptions.</div>
+<button class="ob-cta" onclick="closeOnboarding()">Got it — let's train</button>
+</div>
+</div>
+
+<!-- IN-WORKOUT REFERENCE OVERLAY -->
+<div id="ref-overlay">
+<div class="ref-wrap">
+<div class="ref-close"><button onclick="closeRef()">✕ Close</button></div>
+<div class="ref-grid">
+<div class="ref-cell"><div class="ref-num">1</div><div class="ref-nm">Jab</div></div>
+<div class="ref-cell"><div class="ref-num">2</div><div class="ref-nm">Cross</div></div>
+<div class="ref-cell"><div class="ref-num">3</div><div class="ref-nm">Lead hook</div></div>
+<div class="ref-cell"><div class="ref-num">4</div><div class="ref-nm">Rear hook</div></div>
+<div class="ref-cell"><div class="ref-num">5</div><div class="ref-nm">Lead upper</div></div>
+<div class="ref-cell"><div class="ref-num">6</div><div class="ref-nm">Rear upper</div></div>
+</div>
+<div class="ref-hint">high = head · low / body = downstairs<br>lead = front hand · rear = back hand</div>
+<div class="ref-sec">Defense</div>
+<div class="ob-rows">
+<div class="ob-row"><div class="ob-ic">↙</div><div><div class="ob-rn">Slip inside / outside</div><div class="ob-rc">Head moves to one side of their punch. Counter immediately.</div></div></div>
+<div class="ob-row"><div class="ob-ic">↓</div><div><div class="ob-rn">Roll / bob under</div><div class="ob-rc">Knees bend under the hook. Come up on the opposite side.</div></div></div>
+<div class="ob-row"><div class="ob-ic">←</div><div><div class="ob-rn">Pull / lean back</div><div class="ob-rc">Upper body leans away. Weight to rear foot.</div></div></div>
+<div class="ob-row"><div class="ob-ic">🤚</div><div><div class="ob-rn">Parry</div><div class="ob-rc">Open hand redirects their punch offline. Counter immediately.</div></div></div>
+<div class="ob-row"><div class="ob-ic">🛡</div><div><div class="ob-rn">Block / cover up</div><div class="ob-rc">Gloves high, elbows tight. Absorb on the arms. Temporary.</div></div></div>
+<div class="ob-row"><div class="ob-ic">⬇</div><div><div class="ob-rn">Duck</div><div class="ob-rc">Straight down with the legs. Head below their punch.</div></div></div>
+</div>
+<div class="ref-sec">Footwork</div>
+<div class="ob-rows">
+<div class="ob-row"><div class="ob-ic">→</div><div><div class="ob-rn">Step in / Step back</div><div class="ob-rc">Lead foot first to advance. Rear foot first to retreat.</div></div></div>
+<div class="ob-row"><div class="ob-ic">↗</div><div><div class="ob-rn">Angle step / Pivot</div><div class="ob-rc">Step off the centre line 45°. Punch from the new angle.</div></div></div>
+</div>
+</div>
+</div>
+
+<!-- SETTINGS OVERLAY -->
+<div id="settings-overlay">
+<div class="ref-wrap">
+<div class="ref-close"><button onclick="closeSettings()">✕ Close</button></div>
+<div style="font-size:22px;font-weight:800;margin-bottom:4px;">Settings</div>
+<div class="section-title" style="margin-top:14px;">Voice</div>
+<div class="card">
+  <div class="voice-row" id="voice-row"></div>
+  <div class="pill-row" style="margin-top:10px;">
+    <div class="pill" id="rate-slow" onclick="setRate(0.9)">Slower</div>
+    <div class="pill active" id="rate-normal" onclick="setRate(1.05)">Normal</div>
+    <div class="pill" id="rate-fast" onclick="setRate(1.25)">Faster</div>
+  </div>
+  <div style="font-size:11px;color:var(--grey);margin-top:12px;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">Coach style</div>
+  <div class="pill-row">
+    <div class="pill" id="coach-balanced" onclick="setCoach('balanced')">Balanced</div>
+    <div class="pill" id="coach-drill" onclick="setCoach('drill')">Drill Sgt</div>
+    <div class="pill" id="coach-technical" onclick="setCoach('technical')">Technical</div>
+  </div>
+  <button class="bigbtn secondary" style="margin-top:10px;" onclick="testVoice()">🔊 Test Voice</button>
+</div>
+<div class="section-title">Appearance</div>
+<div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+  <div style="font-size:14px;font-weight:600;">Dark / Light theme</div>
+  <button class="theme-btn" onclick="toggleTheme()" style="margin-left:0;">🌗</button>
+</div>
+<div class="section-title">Data</div>
+<div class="card">
+  <button class="bigbtn secondary" onclick="exportCSV()">📤 Export History (CSV)</button>
+</div>
+</div>
+</div>
+
+<!-- PROFILE OVERLAY -->
+<div id="profile-overlay">
+<div class="ref-wrap">
+<div class="ref-close"><button onclick="closeProfile()">✕ Close</button></div>
+<div style="font-size:22px;font-weight:800;margin-bottom:4px;">Fighter Profile</div>
+<div class="section-title" style="margin-top:14px;">Details</div>
+<div class="card" id="profile-card">
+  <div class="profile-line"><span class="pl">Name</span><input id="pf-name" type="text" placeholder="Your name" oninput="saveProfile()"></div>
+  <div class="profile-line"><span class="pl">Skill level</span>
+    <select id="pf-skill" onchange="saveProfile()"><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></div>
+  <div class="profile-line"><span class="pl">Goal</span>
+    <select id="pf-goal" onchange="saveProfile()"><option value="fitness">Fitness</option><option value="technique">Technique</option><option value="fight">Fight prep</option></select></div>
+</div>
+<div class="section-title">Stats</div>
+<div class="stat-grid">
+  <div class="stat-box"><div class="stat-num" id="profile-sessions">0</div><div class="stat-lbl">Sessions</div></div>
+  <div class="stat-box"><div class="stat-num" id="profile-streak">0</div><div class="stat-lbl">Day Streak</div></div>
+</div>
+</div>
+</div>
+
+
+  <div class="header">
+    <div>
+      <div class="greeting">Let's <span>train</span>.</div>
+      <div class="subgreeting" id="subgreeting">Ready when you are.</div>
+    </div>
+    <div class="header-right">
+      <div class="streak-pill"><span id="streak-emoji">🔥</span> <span id="streak-mini">0</span></div>
+      <button class="theme-btn" onclick="openProfile()" id="profile-btn">👤</button>
+      <button class="theme-btn" onclick="openSettings()" id="settings-btn">⚙️</button>
+    </div>
+  </div>
+
+  <div class="view active" id="view-home">
+
+    <!-- HOME -->
+    <div class="tabpane active" id="pane-home">
+      <div class="pad">
+        <div class="resume-banner" id="resume-banner">
+          <div class="rb-t">Unfinished session</div>
+          <div class="rb-s" id="resume-sub">Pick up where you left off.</div>
+          <div class="resume-row">
+            <button class="rb-go" onclick="resumeSession()">Resume</button>
+            <button class="rb-x" onclick="discardSnapshot()">Discard</button>
+          </div>
+        </div>
+
+        <div class="section-title">Weekly Challenge</div>
+        <div class="challenge-card" id="challenge-card"></div>
+
+        <div class="section-title">This Week</div>
+        <div class="stat-grid">
+          <div class="stat-box"><div class="stat-num" id="home-sessions">0</div><div class="stat-lbl">Sessions</div></div>
+          <div class="stat-box"><div class="stat-num" id="home-rounds">0</div><div class="stat-lbl">Rounds</div></div>
+        </div>
+
+        <div class="section-title">Quick Actions</div>
+        <button class="bigbtn" onclick="switchTab('quick')">🥊 Browse Sessions</button>
+        <button class="bigbtn secondary" style="margin-top:10px;" onclick="switchTab('smart')">🎯 Build Me One</button>
+      </div>
+    </div>
+
+    <!-- SMART BUILDER -->
+    <div class="tabpane" id="pane-smart">
+      <div class="pad">
+        <div class="section-title" style="margin-top:14px;">Build For Me</div>
+        <div class="card">
+          <div style="font-size:11px;color:var(--grey);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">How long have you got?</div>
+          <div class="pill-row" id="smart-dur-row" style="margin-bottom:10px;">
+            <div class="pill" onclick="setSmartDur(15,this)">15 min</div>
+            <div class="pill active" onclick="setSmartDur(30,this)">30 min</div>
+            <div class="pill" onclick="setSmartDur(45,this)">45 min</div>
+            <div class="pill" onclick="setSmartDur(60,this)">60 min</div>
+          </div>
+          <textarea id="smart-input" placeholder="e.g. I've got 25 minutes, my jab is weak and I gas out in the later rounds"></textarea>
+          <div class="smart-examples">Try: <span>"30 min, sore today, keep it technical"</span> · <span>"20 min conditioning, struggle with southpaws"</span></div>
+          <button class="bigbtn gold" style="margin-top:12px;" onclick="buildSmartSession()">Build My Session</button>
+        </div>
+        <div id="smart-preview"></div>
+        <div class="hint">Reads your description for time, focus, and fatigue level — keyword-based, fully offline.</div>
+      </div>
+    </div>
+
+    <!-- SESSIONS (templates + custom) -->
+    <div class="tabpane" id="pane-quick">
+      <div class="pad">
+        <div class="section-title" style="margin-top:14px;">Sessions</div>
+        <div id="tpl-list"></div>
+        <div id="my-sessions"></div>
+
+        <div class="section-title">Build Your Own</div>
+        <div class="card" id="custom-toggle-card" onclick="toggleCustomPanel()">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:700;font-size:14.5px;">Custom Round Builder</div>
+              <div style="font-size:12px;color:var(--grey);margin-top:2px;">Pick your own length, rest, focus & intensity</div>
+            </div>
+            <div style="font-size:20px;color:var(--grey);" id="custom-chevron">›</div>
+          </div>
+        </div>
+        <div id="custom-panel" style="display:none;">
+          <div class="card">
+            <div class="section-title" style="margin-top:0;">Round Objective</div>
+            <div class="pill-row" id="focus-row"></div>
+            <div class="section-title">Round Length</div>
+            <div class="stepper">
+              <button onclick="adjust('round',-15)">−</button>
+              <div class="stepper-val" id="round-val">2:00<small>per round</small></div>
+              <button onclick="adjust('round',15)">+</button>
+            </div>
+            <div class="section-title">Rest Length</div>
+            <div class="stepper">
+              <button onclick="adjust('rest',-15)">−</button>
+              <div class="stepper-val" id="rest-val">0:45<small>per rest</small></div>
+              <button onclick="adjust('rest',15)">+</button>
+            </div>
+            <div class="section-title">Rounds</div>
+            <div class="stepper">
+              <button onclick="adjust('rounds',-1)">−</button>
+              <div class="stepper-val" id="rounds-val">5<small>rounds</small></div>
+              <button onclick="adjust('rounds',1)">+</button>
+            </div>
+            <div class="section-title">Intensity</div>
+            <div class="pill-row" id="intensity-row"></div>
+            <button class="bigbtn" style="margin-top:14px;" onclick="startCustom()">Start Custom Session</button>
+            <button class="bigbtn secondary" style="margin-top:10px;" onclick="saveCustomAsSession()">💾 Save This As A Session</button>
+          </div>
+        </div>
+        <div class="hint">1 jab · 2 cross · 3 lead hook · 4 rear hook · 5 lead uppercut · 6 rear uppercut. Mirror lead/rear for southpaw.</div>
+      </div>
+    </div>
+
+    <!-- LIBRARY -->
+    <div class="tabpane" id="pane-library">
+      <div class="pad" style="padding-bottom:40px;">
+        <div class="lib-tab-row">
+          <div class="lib-tab-btn active" id="lt-combos" onclick="setLibTab('combos')">Combos</div>
+          <div class="lib-tab-btn" id="lt-ref" onclick="setLibTab('ref')">Reference</div>
+        </div>
+        <div id="lib-combos-panel">
+          <div class="lib-level-row" id="lib-level-row"></div>
+          <div id="combo-list"></div>
+          <div class="add-card">
+            <div class="section-title" style="margin-top:0;">Add your own combo</div>
+            <input type="text" id="new-combo-n" placeholder="e.g. 1-2-3, slip">
+            <input type="text" id="new-combo-name" placeholder="Name (optional)">
+            <div class="tag-pick" id="new-combo-tags">
+              <div class="tag-opt" data-tag="jab" onclick="toggleTag(this)">Jab</div>
+              <div class="tag-opt" data-tag="power" onclick="toggleTag(this)">Power</div>
+              <div class="tag-opt" data-tag="combo" onclick="toggleTag(this)">Combo</div>
+              <div class="tag-opt" data-tag="defense" onclick="toggleTag(this)">Defense</div>
+              <div class="tag-opt" data-tag="speed" onclick="toggleTag(this)">Speed</div>
+              <div class="tag-opt" data-tag="body" onclick="toggleTag(this)">Body</div>
+              <div class="tag-opt" data-tag="counter" onclick="toggleTag(this)">Counter</div>
+              <div class="tag-opt" data-tag="southpaw" onclick="toggleTag(this)">Vs Southpaw</div>
+            </div>
+            <button class="bigbtn gold" onclick="addCustomCombo()">Add To Library</button>
+          </div>
+        </div>
+        <div id="lib-ref-panel" style="display:none;">
+          <div class="ob-sec" style="margin-top:0;">Punches</div>
+          <div class="ob-grid" id="lib-punch-grid"></div>
+          <div class="ob-sec">Defense</div>
+          <div class="ob-rows" id="lib-def-rows"></div>
+          <div class="ob-sec">Footwork</div>
+          <div class="ob-rows" id="lib-foot-rows"></div>
+          <div class="ob-sec">Feints</div>
+          <div class="ob-rows" id="lib-feint-rows"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="tabpane" id="pane-progress">
+      <div class="pad">
+        <div class="streak-box">
+          <div class="streak-num" id="streak-num">0</div>
+          <div class="stat-lbl">DAY STREAK</div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-box"><div class="stat-num" id="stat-sessions">0</div><div class="stat-lbl">Sessions</div></div>
+          <div class="stat-box"><div class="stat-num" id="stat-rounds">0</div><div class="stat-lbl">Rounds</div></div>
+          <div class="stat-box"><div class="stat-num" id="stat-time">0</div><div class="stat-lbl">Hrs Trained</div></div>
+          <div class="stat-box"><div class="stat-num" id="stat-punches">0</div><div class="stat-lbl">Est. Punches</div></div>
+        </div>
+        <div class="xp-box">
+          <div class="xp-top"><span>Level <b id="xp-level">1</b></span><span id="xp-count">0 / 120 XP</span></div>
+          <div class="xp-bar"><div class="xp-fill" id="xp-fill" style="width:0%"></div></div>
+        </div>
+        <div class="section-title">This Month</div>
+        <div class="card"><div class="cal-head"><span id="cal-title"></span></div><div class="cal-grid" id="cal-grid"></div></div>
+        <div class="section-title">Badges</div>
+        <div class="badge-grid" id="badge-grid"></div>
+        <div class="section-title">History</div>
+        <div id="history-list"></div>
+        <button class="bigbtn secondary" style="margin-top:12px;" onclick="exportCSV()">📤 Export History (CSV)</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottomnav" id="bottomnav">
+    <div class="navitem active" data-tab="home" onclick="switchTab('home')"><div class="ic">🏠</div><div class="lbl">Home</div></div>
+    <div class="navitem" data-tab="smart" onclick="switchTab('smart')"><div class="ic">🎯</div><div class="lbl">Build</div></div>
+    <div class="navitem" data-tab="quick" onclick="switchTab('quick')"><div class="ic">🥊</div><div class="lbl">Sessions</div></div>
+    <div class="navitem" data-tab="library" onclick="switchTab('library')"><div class="ic">📖</div><div class="lbl">Library</div></div>
+    <div class="navitem" data-tab="progress" onclick="switchTab('progress')"><div class="ic">📈</div><div class="lbl">Progress</div></div>
+  </div>
+
+  <!-- SESSION DETAIL -->
+  <div class="view" id="view-session-detail">
+    <div class="pad" style="padding-top:18px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <button class="exit-btn" onclick="closeSessionDetail()">‹ Back</button>
+      </div>
+      <div id="detail-title" style="font-size:22px;font-weight:800;"></div>
+      <div id="detail-desc" style="font-size:13px;color:var(--grey);margin-top:4px;line-height:1.5;"></div>
+
+      <div class="section-title">Difficulty</div>
+      <div class="pill-row" id="detail-level-row"></div>
+
+      <div class="section-title">Round Length</div>
+      <div class="pill-row" id="detail-worklen-row"></div>
+      <div id="detail-work-custom"></div>
+
+      <div class="section-title">Rest Between Rounds</div>
+      <div class="pill-row" id="detail-restlen-row"></div>
+      <div id="detail-rest-custom"></div>
+
+      <div class="section-title">Callout Pace</div>
+      <div class="pill-row" id="detail-pace-row"></div>
+      <div id="detail-pace-custom"></div>
+
+      <div class="section-title">Breakdown</div>
+      <div id="detail-breakdown"></div>
+
+      <div class="card" style="margin-top:6px;display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-size:13px;color:var(--grey);">Total session length</div>
+        <div id="detail-total" style="font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);">0 min</div>
+      </div>
+
+      <div id="detail-examples" class="hint" style="text-align:left;"></div>
+
+      <button class="bigbtn" style="margin-top:16px;" onclick="startFromDetail()">Start Session</button>
+      <button class="bigbtn secondary" style="margin-top:10px;" onclick="saveDetailAsSession()">💾 Save This As A Session</button>
+      <div style="height:30px;"></div>
+    </div>
+  </div>
+
+  <!-- WORKOUT -->
+  <div class="view" id="view-workout">
+    <div class="workout">
+      <div class="status-row">
+        <div>
+          <div class="round-tag">ROUND <b id="round-current">1</b> / <span id="round-total">5</span></div>
+          <div class="round-type-tag" id="round-type-tag">FLOW</div>
+          <div class="round-objective" id="round-objective"></div>
+        </div>
+        <div style="display:flex;align-items:center;">
+          <button class="focus-btn" onclick="toggleFocus()" id="focus-btn">⛶</button>
+          <button class="exit-btn" style="border-color:var(--red);color:var(--red);font-weight:700;" onclick="endWorkout()">✕ End</button>
+        </div>
+      </div>
+      <div class="intensity-bar"><div class="intensity-fill" id="intensity-fill" style="width:60%"></div></div>
+      <div class="ring">
+        <div class="phase-label work" id="phase-label">WORK</div>
+        <div class="timer" id="timer">2:00</div>
+        <div class="combo-card" id="combo-card">
+          <button class="ref-qbtn" onclick="showRef()">?</button>
+          <div class="combo-nums" id="combo-nums">GET READY</div>
+          <div class="combo-name" id="combo-name">Tap start when you're set</div>
+        </div>
+        <div class="progress-dots" id="dots"></div>
+      </div>
+      <div class="controls">
+        <button class="ctrl-btn" id="pause-btn" onclick="togglePause()">PAUSE</button>
+        <button class="ctrl-btn primary" onclick="speakCurrentCombo()">REPEAT CALL</button>
+      </div>
+      <button class="ctrl-btn" style="margin-top:10px;width:100%;color:var(--red);border-color:var(--red);" onclick="endWorkout()">End Session</button>
+    </div>
+  </div>
+
+  <!-- END SESSION CONFIRM -->
+  <div id="end-confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(8,11,20,.85);backdrop-filter:blur(6px);z-index:100;align-items:center;justify-content:center;padding:24px;">
+    <div class="card" style="max-width:340px;width:100%;text-align:center;border-color:var(--red);">
+      <div style="font-size:18px;font-weight:800;margin-bottom:6px;">End this session?</div>
+      <div style="font-size:13px;color:var(--grey);margin-bottom:20px;">Your progress so far still gets logged.</div>
+      <button class="bigbtn" style="background:var(--red);" onclick="confirmEndWorkout()">Yes, End Session</button>
+      <button class="bigbtn secondary" style="margin-top:10px;" onclick="cancelEndWorkout()">Keep Training</button>
+    </div>
+  </div>
+
+  <!-- SURVEY -->
+  <div class="view" id="view-survey">
+    <div class="done">
+      <div class="big">HOW'D THAT FEEL?</div>
+      <div class="survey">
+        <div class="q">Which round felt hardest?</div>
+        <div class="opts" id="survey-rounds"></div>
+        <div class="q">Did you complete every round?</div>
+        <div class="opts" id="survey-complete">
+          <div class="opt" data-val="yes" onclick="selectOpt(this,'complete')">Yes, all of it</div>
+          <div class="opt" data-val="no" onclick="selectOpt(this,'complete')">Cut it short</div>
+        </div>
+        <div class="q">How did it feel overall?</div>
+        <div class="opts" id="survey-feel">
+          <div class="opt" data-val="sharp" onclick="selectOpt(this,'feel')">Sharp & strong</div>
+          <div class="opt" data-val="endurance" onclick="selectOpt(this,'feel')">Gassed out</div>
+          <div class="opt" data-val="technique" onclick="selectOpt(this,'feel')">Lost my technique</div>
+        </div>
+      </div>
+      <button onclick="submitSurvey()">SAVE & FINISH</button>
+    </div>
+  </div>
+
+  <!-- DONE -->
+  <div class="view" id="view-done">
+    <div class="done">
+      <div class="big">SESSION LOGGED</div>
+      <p id="done-summary">5 rounds · 10 min</p>
+      <button onclick="resetToSetup()">BACK TO START</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* AUDIO_MANIFEST:BEGIN (auto-generated by audio/gen_audio.py -- do not hand-edit) */
+const AUDIO_MANIFEST = {
+  "chunks": {
+    "1": "audio/chunks/1.wav",
+    "10": "audio/chunks/10.wav",
+    "2": "audio/chunks/2.wav",
+    "3": "audio/chunks/3.wav",
+    "4": "audio/chunks/4.wav",
+    "5": "audio/chunks/5.wav",
+    "6": "audio/chunks/6.wav",
+    "angle_out": "audio/chunks/angle_out.wav",
+    "block": "audio/chunks/block.wav",
+    "circle_left": "audio/chunks/circle_left.wav",
+    "circle_right": "audio/chunks/circle_right.wav",
+    "cross_feint": "audio/chunks/cross_feint.wav",
+    "duck": "audio/chunks/duck.wav",
+    "fake_high_go_low": "audio/chunks/fake_high_go_low.wav",
+    "fake_low_go_high": "audio/chunks/fake_low_go_high.wav",
+    "high": "audio/chunks/high.wav",
+    "jab_feint": "audio/chunks/jab_feint.wav",
+    "parry": "audio/chunks/parry.wav",
+    "pivot_off_lead_foot": "audio/chunks/pivot_off_lead_foot.wav",
+    "pivot_off_rear_foot": "audio/chunks/pivot_off_rear_foot.wav",
+    "pull_back": "audio/chunks/pull_back.wav",
+    "roll_under": "audio/chunks/roll_under.wav",
+    "shoulder_feint": "audio/chunks/shoulder_feint.wav",
+    "slip": "audio/chunks/slip.wav",
+    "slip_inside": "audio/chunks/slip_inside.wav",
+    "slip_outside": "audio/chunks/slip_outside.wav",
+    "step_back": "audio/chunks/step_back.wav",
+    "step_in": "audio/chunks/step_in.wav",
+    "step_in_feint": "audio/chunks/step_in_feint.wav",
+    "step_out": "audio/chunks/step_out.wav",
+    "to_the_body": "audio/chunks/to_the_body.wav"
+  },
+  "sentences": {
+    "accuracy_over_power": "audio/sentences/accuracy_over_power.wav",
+    "balance_first_power_second": "audio/sentences/balance_first_power_second.wav",
+    "body_then_head": "audio/sentences/body_then_head.wav",
+    "chain_it_together": "audio/sentences/chain_it_together.wav",
+    "check_your_guard_elbows_in": "audio/sentences/check_your_guard_elbows_in.wav",
+    "close_the_distance": "audio/sentences/close_the_distance.wav",
+    "come_on_pick_it_up": "audio/sentences/come_on_pick_it_up.wav",
+    "control_the_angle": "audio/sentences/control_the_angle.wav",
+    "cool_down_half_speed_light_hands_deep_breaths": "audio/sentences/cool_down_half_speed_light_hands_deep_breaths.wav",
+    "counter_off_every_movement": "audio/sentences/counter_off_every_movement.wav",
+    "cut_the_ring_off": "audio/sentences/cut_the_ring_off.wav",
+    "defense_into_counter": "audio/sentences/defense_into_counter.wav",
+    "do_not_slow_down_now": "audio/sentences/do_not_slow_down_now.wav",
+    "don_t_just_avoid_answer_back": "audio/sentences/don_t_just_avoid_answer_back.wav",
+    "don_t_let_them_square_up": "audio/sentences/don_t_let_them_square_up.wav",
+    "don_t_let_your_hands_drop": "audio/sentences/don_t_let_your_hands_drop.wav",
+    "don_t_sacrifice_technique_for_speed": "audio/sentences/don_t_sacrifice_technique_for_speed.wav",
+    "don_t_throw_for_the_sake_of_it": "audio/sentences/don_t_throw_for_the_sake_of_it.wav",
+    "double_jab_entries": "audio/sentences/double_jab_entries.wav",
+    "easy_rhythm": "audio/sentences/easy_rhythm.wav",
+    "empty_the_tank": "audio/sentences/empty_the_tank.wav",
+    "empty_the_tank_finish_on_your_feet_balanced": "audio/sentences/empty_the_tank_finish_on_your_feet_balanced.wav",
+    "every_combo_sharp": "audio/sentences/every_combo_sharp.wav",
+    "everything_left_in_the_tank": "audio/sentences/everything_left_in_the_tank.wav",
+    "everything_you_ve_got": "audio/sentences/everything_you_ve_got.wav",
+    "faster_hands": "audio/sentences/faster_hands.wav",
+    "faster_you_have_more_than_that": "audio/sentences/faster_you_have_more_than_that.wav",
+    "find_your_range": "audio/sentences/find_your_range.wav",
+    "finish_on_your_feet_balanced": "audio/sentences/finish_on_your_feet_balanced.wav",
+    "focus_on_the_follow_through": "audio/sentences/focus_on_the_follow_through.wav",
+    "force_the_angle_then_unload": "audio/sentences/force_the_angle_then_unload.wav",
+    "force_them_to_make_a_choice": "audio/sentences/force_them_to_make_a_choice.wav",
+    "full_hip_drive_on_every_cross": "audio/sentences/full_hip_drive_on_every_cross.wav",
+    "get_the_blood_moving": "audio/sentences/get_the_blood_moving.wav",
+    "good_rhythm_stay_with_it": "audio/sentences/good_rhythm_stay_with_it.wav",
+    "halfway_there_keep_the_form_tight": "audio/sentences/halfway_there_keep_the_form_tight.wav",
+    "hands_up_in_and_out_fast": "audio/sentences/hands_up_in_and_out_fast.wav",
+    "head_movement_and_footwork": "audio/sentences/head_movement_and_footwork.wav",
+    "high_output": "audio/sentences/high_output.wav",
+    "jab_to_create_openings": "audio/sentences/jab_to_create_openings.wav",
+    "jab_cross_hook_move": "audio/sentences/jab_cross_hook_move.wav",
+    "jab_cross_hook_let_s_work": "audio/sentences/jab_cross_hook_let_s_work.wav",
+    "jab_cross_hook_watch_the_elbow_on_that_hook": "audio/sentences/jab_cross_hook_watch_the_elbow_on_that_hook.wav",
+    "just_getting_warm": "audio/sentences/just_getting_warm.wav",
+    "keep_the_intensity": "audio/sentences/keep_the_intensity.wav",
+    "keep_the_quality_up_late": "audio/sentences/keep_the_quality_up_late.wav",
+    "last_round": "audio/sentences/last_round.wav",
+    "lead_foot_outside_theirs": "audio/sentences/lead_foot_outside_theirs.wav",
+    "lead_foot_outside_theirs_control_the_angle": "audio/sentences/lead_foot_outside_theirs_control_the_angle.wav",
+    "less_gap_between_punches": "audio/sentences/less_gap_between_punches.wav",
+    "let_it_come_to_you_then_make_them_pay": "audio/sentences/let_it_come_to_you_then_make_them_pay.wav",
+    "level_changes": "audio/sentences/level_changes.wav",
+    "looking_sharp_stay_relaxed": "audio/sentences/looking_sharp_stay_relaxed.wav",
+    "loosen_up_find_your_range": "audio/sentences/loosen_up_find_your_range.wav",
+    "loosen_up": "audio/sentences/loosen_up.wav",
+    "maximum_hand_speed": "audio/sentences/maximum_hand_speed.wav",
+    "mix_body_shots_with_head_shots": "audio/sentences/mix_body_shots_with_head_shots.wav",
+    "mix_up_the_timing": "audio/sentences/mix_up_the_timing.wav",
+    "more_pressure": "audio/sentences/more_pressure.wav",
+    "more_rotation_this_time": "audio/sentences/more_rotation_this_time.wav",
+    "move_as_soon_as_you_throw": "audio/sentences/move_as_soon_as_you_throw.wav",
+    "nice_and_easy_to_start": "audio/sentences/nice_and_easy_to_start.wav",
+    "nice_work_keep_breathing": "audio/sentences/nice_work_keep_breathing.wav",
+    "no_lazy_punches": "audio/sentences/no_lazy_punches.wav",
+    "output_round": "audio/sentences/output_round.wav",
+    "output_round_don_t_let_your_hands_drop": "audio/sentences/output_round_don_t_let_your_hands_drop.wav",
+    "power_endurance": "audio/sentences/power_endurance.wav",
+    "pressure_and_combinations": "audio/sentences/pressure_and_combinations.wav",
+    "push_this_is_where_it_counts": "audio/sentences/push_this_is_where_it_counts.wav",
+    "quality_over_output": "audio/sentences/quality_over_output.wav",
+    "read_and_react": "audio/sentences/read_and_react.wav",
+    "rest": "audio/sentences/rest.wav",
+    "resuming_round_1": "audio/sentences/resuming_round_1.wav",
+    "resuming_round_10": "audio/sentences/resuming_round_10.wav",
+    "resuming_round_11": "audio/sentences/resuming_round_11.wav",
+    "resuming_round_12": "audio/sentences/resuming_round_12.wav",
+    "resuming_round_13": "audio/sentences/resuming_round_13.wav",
+    "resuming_round_14": "audio/sentences/resuming_round_14.wav",
+    "resuming_round_15": "audio/sentences/resuming_round_15.wav",
+    "resuming_round_16": "audio/sentences/resuming_round_16.wav",
+    "resuming_round_17": "audio/sentences/resuming_round_17.wav",
+    "resuming_round_18": "audio/sentences/resuming_round_18.wav",
+    "resuming_round_19": "audio/sentences/resuming_round_19.wav",
+    "resuming_round_2": "audio/sentences/resuming_round_2.wav",
+    "resuming_round_20": "audio/sentences/resuming_round_20.wav",
+    "resuming_round_3": "audio/sentences/resuming_round_3.wav",
+    "resuming_round_4": "audio/sentences/resuming_round_4.wav",
+    "resuming_round_5": "audio/sentences/resuming_round_5.wav",
+    "resuming_round_6": "audio/sentences/resuming_round_6.wav",
+    "resuming_round_7": "audio/sentences/resuming_round_7.wav",
+    "resuming_round_8": "audio/sentences/resuming_round_8.wav",
+    "resuming_round_9": "audio/sentences/resuming_round_9.wav",
+    "rotate_the_hip_every_single_punch": "audio/sentences/rotate_the_hip_every_single_punch.wav",
+    "round_1": "audio/sentences/round_1.wav",
+    "round_10": "audio/sentences/round_10.wav",
+    "round_11": "audio/sentences/round_11.wav",
+    "round_12": "audio/sentences/round_12.wav",
+    "round_13": "audio/sentences/round_13.wav",
+    "round_14": "audio/sentences/round_14.wav",
+    "round_15": "audio/sentences/round_15.wav",
+    "round_16": "audio/sentences/round_16.wav",
+    "round_17": "audio/sentences/round_17.wav",
+    "round_18": "audio/sentences/round_18.wav",
+    "round_19": "audio/sentences/round_19.wav",
+    "round_2": "audio/sentences/round_2.wav",
+    "round_20": "audio/sentences/round_20.wav",
+    "round_3": "audio/sentences/round_3.wav",
+    "round_4": "audio/sentences/round_4.wav",
+    "round_5": "audio/sentences/round_5.wav",
+    "round_6": "audio/sentences/round_6.wav",
+    "round_7": "audio/sentences/round_7.wav",
+    "round_8": "audio/sentences/round_8.wav",
+    "round_9": "audio/sentences/round_9.wav",
+    "session_complete_good_work": "audio/sentences/session_complete_good_work.wav",
+    "sharper_counters": "audio/sentences/sharper_counters.wav",
+    "sit_down_on_your_shots": "audio/sentences/sit_down_on_your_shots.wav",
+    "sit_down_on_your_shots_turn_the_hip_over": "audio/sentences/sit_down_on_your_shots_turn_the_hip_over.wav",
+    "slow_it_down": "audio/sentences/slow_it_down.wav",
+    "slow_it_down_quality_over_output_today": "audio/sentences/slow_it_down_quality_over_output_today.wav",
+    "smoother_this_time": "audio/sentences/smoother_this_time.wav",
+    "snap_and_return_no_lazy_arms": "audio/sentences/snap_and_return_no_lazy_arms.wav",
+    "stay_light_on_your_feet": "audio/sentences/stay_light_on_your_feet.wav",
+    "stay_loose_chain_it_together": "audio/sentences/stay_loose_chain_it_together.wav",
+    "stay_loose": "audio/sentences/stay_loose.wav",
+    "take_the_legs_out": "audio/sentences/take_the_legs_out.wav",
+    "technical_precision": "audio/sentences/technical_precision.wav",
+    "tighter_defense": "audio/sentences/tighter_defense.wav",
+    "tighter_footwork": "audio/sentences/tighter_footwork.wav",
+    "time_it_earlier": "audio/sentences/time_it_earlier.wav",
+    "turn_the_hip_over": "audio/sentences/turn_the_hip_over.wav",
+    "walk_them_down": "audio/sentences/walk_them_down.wav",
+    "walk_them_down_cut_the_ring_off": "audio/sentences/walk_them_down_cut_the_ring_off.wav",
+    "walk_through_the_return": "audio/sentences/walk_through_the_return.wav",
+    "work_behind_the_jab": "audio/sentences/work_behind_the_jab.wav",
+    "work_behind_the_jab_accuracy_over_power": "audio/sentences/work_behind_the_jab_accuracy_over_power.wav",
+    "work_downstairs_take_the_legs_out": "audio/sentences/work_downstairs_take_the_legs_out.wav",
+    "work_downstairs": "audio/sentences/work_downstairs.wav",
+    "you_re_stronger_than_the_fatigue": "audio/sentences/you_re_stronger_than_the_fatigue.wav"
+  }
+};
+/* AUDIO_MANIFEST:END */
+
+/* ================= PRE-GENERATED AUDIO (ElevenLabs) =================
+   Combo callouts are built from a small vocabulary of reusable chunk clips
+   (numbers + phrases) stitched back-to-back with a small gap — see
+   tokenizeCombo/resolveComboChunks/playBufferSequence below. Coach lines,
+   round objectives, and other real sentences use one natural full-sentence
+   clip each — see speakGeneratedOrFallback. Browser TTS (speak()) is the
+   fallback whenever a clip hasn't been generated (custom user combos,
+   round counts beyond the pre-baked "Resuming" range, etc). Regenerate /
+   add new clips any time with audio/gen_audio.py. */
+const audioBufferCache = new Map();   // file url -> decoded AudioBuffer
+const audioLoadPromises = new Map();  // file url -> in-flight load Promise
+let activeChunkSources = [];
+let pendingChunkTimeout = null;
+
+function slugifyText(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
+
+function loadAudioBuffer(url){
+  if(audioBufferCache.has(url)) return Promise.resolve(audioBufferCache.get(url));
+  if(audioLoadPromises.has(url)) return audioLoadPromises.get(url);
+  const p = fetch(url)
+    .then(r=>{ if(!r.ok) throw new Error('missing audio '+url); return r.arrayBuffer(); })
+    .then(buf=>getCtx().decodeAudioData(buf))
+    .then(decoded=>{ audioBufferCache.set(url, decoded); return decoded; })
+    .catch(()=>null);
+  audioLoadPromises.set(url, p);
+  return p;
+}
+function preloadGeneratedAudio(){
+  Object.values(AUDIO_MANIFEST.chunks).forEach(loadAudioBuffer);
+  Object.values(AUDIO_MANIFEST.sentences).forEach(loadAudioBuffer);
+}
+preloadGeneratedAudio();
+
+/* Tokenize a combo's "nums" string into the same chunk vocabulary used by
+   audio/gen_audio.py — MUST stay in sync with tokenize_combo() there.
+   Each token is {text, glue}: glue=true means "a modifier phrase describing
+   the punch that came right before it in the same segment" (the "to the
+   body" in "2 to the body", the "high" in "3 high") -- these get a much
+   tighter gap so "2 to the body" reads as one beat instead of three words
+   with dead air between them. glue=false is a fresh punch/segment and gets
+   the normal spaced-out cadence. */
+function tokenizeCombo(str){
+  const tokens = [];
+  str.split(',').forEach(seg=>{
+    seg = seg.trim();
+    if(!seg) return;
+    const m = seg.match(/^([1-6](?:-[1-6])*)(?:\s+(.+))?$/);
+    if(m){
+      m[1].split('-').forEach(d=>tokens.push({text:d, glue:false}));
+      if(m[2]) tokens.push({text:m[2].trim(), glue:true});
+    } else {
+      tokens.push({text:seg, glue:false});
+    }
+  });
+  return tokens;
+}
+
+/* Returns an array of {url, glue} if EVERY token in the combo has a
+   generated (and already-loaded) clip, else null to signal "fall back to
+   browser TTS for the whole combo". Phrase tokens get southpaw-mirrored
+   before lookup so "pivot off lead foot"/"circle left" etc. resolve to
+   their opposite-side clip, same as the old full-text mirroring did. */
+function resolveComboChunks(nums){
+  const tokens = tokenizeCombo(nums);
+  const urls = [];
+  for(const tok of tokens){
+    const isDigit = /^[1-6]$/.test(tok.text);
+    const key = isDigit ? tok.text : slugifyText(mirrorForSouthpaw(tok.text));
+    const url = AUDIO_MANIFEST.chunks[key];
+    if(!url || !audioBufferCache.has(url)) return null;
+    urls.push({url, glue: tok.glue});
+  }
+  return urls;
+}
+
+function stopChunkPlayback(){
+  activeChunkSources.forEach(src=>{ try{ src.stop(); }catch(e){} });
+  activeChunkSources = [];
+  if(pendingChunkTimeout){ clearTimeout(pendingChunkTimeout); pendingChunkTimeout = null; }
+}
+function trackChunkSource(src){
+  activeChunkSources.push(src);
+  src.onended = ()=>{ const i = activeChunkSources.indexOf(src); if(i>=0) activeChunkSources.splice(i,1); };
+}
+
+const CHUNK_GAP_SEC = 0.12;
+const CHUNK_GLUE_GAP_SEC = 0.02;
+/* Combo chunk sequences intentionally interrupt any combo/number audio
+   still playing (REPEAT CALL, or the next combo coming up) — that's the
+   one case where cutting off is what the user wants. */
+function playBufferSequence(items, onDone){
+  stopChunkPlayback();
+  const ctx = getCtx();
+  if(ctx.state === 'suspended') ctx.resume();
+  let when = ctx.currentTime + 0.03;
+  items.forEach(({url, glue})=>{
+    const buf = audioBufferCache.get(url);
+    const src = ctx.createBufferSource();
+    src.buffer = buf; src.connect(ctx.destination);
+    src.start(when);
+    trackChunkSource(src);
+    when += buf.duration + (glue ? CHUNK_GLUE_GAP_SEC : CHUNK_GAP_SEC);
+  });
+  const totalMs = Math.max(50, (when - CHUNK_GAP_SEC - ctx.currentTime) * 1000);
+  if(onDone) pendingChunkTimeout = setTimeout(()=>{ pendingChunkTimeout=null; onDone(); }, totalMs);
+}
+/* Single clips (sentences + countdown digits) are a separate layer from
+   combo callouts — they must NOT stop other audio that's mid-playback
+   (that was causing "Round 1. Loosen up..." to get cut off by the "5" of
+   the preroll countdown a second later). They still get tracked so
+   stopChunkPlayback() (pause / end workout) can silence them. */
+function playBufferNow(buf, onDone){
+  const ctx = getCtx();
+  if(ctx.state === 'suspended') ctx.resume();
+  const src = ctx.createBufferSource();
+  src.buffer = buf; src.connect(ctx.destination);
+  src.start();
+  trackChunkSource(src);
+  if(onDone) setTimeout(onDone, Math.max(50, buf.duration*1000));
+}
+
+/* Full-sentence lines: play the pre-generated clip if we have one, else
+   fall back to browser TTS via speak(). Same onDone contract as speak(). */
+function speakGeneratedOrFallback(text, onDone){
+  const url = AUDIO_MANIFEST.sentences[slugifyText(text)];
+  const buf = url ? audioBufferCache.get(url) : null;
+  if(buf){ playBufferNow(buf, onDone); return; }
+  speak(text, onDone);
+}
+/* Single-digit countdown numbers reuse the same number chunks as combos. */
+function playChunkNumberOrSpeak(n, text){
+  const url = AUDIO_MANIFEST.chunks[String(n)];
+  const buf = url ? audioBufferCache.get(url) : null;
+  if(buf){ playBufferNow(buf); return; }
+  speak(text);
+}
+
+/* ================= COMBO LIBRARY ================= */
+const BUILTIN = {
+  beginner: [
+    {n:"1", name:"Jab", tags:["jab","speed"]},
+    {n:"1-2", name:"Jab, cross", tags:["jab","combo"]},
+    {n:"1-1", name:"Double jab", tags:["jab","speed"]},
+    {n:"1-1-2", name:"Jab, jab, cross", tags:["jab","combo"]},
+    {n:"1-2-3", name:"Jab, cross, lead hook", tags:["combo"]},
+    {n:"2-3", name:"Cross, lead hook", tags:["power","combo"]},
+    {n:"3-2", name:"Lead hook, cross", tags:["power"]},
+    {n:"1-2-2", name:"Jab, cross, cross", tags:["power","combo"]},
+    {n:"1-2-1", name:"Jab, cross, jab", tags:["jab","combo"]},
+    {n:"1-3-2", name:"Jab, lead hook, cross", tags:["combo"]},
+    {n:"2 to the body", name:"Cross to the body", tags:["body","power"]},
+    {n:"1, 2 to the body", name:"Jab, cross to the body", tags:["body","jab"]},
+    {n:"2 to the body, 3 high", name:"Cross downstairs, then hook upstairs", tags:["body","combo"]},
+    {n:"step in, 1-2", name:"Step in to close the distance, jab-cross", tags:["jab","combo"]},
+    {n:"step back, 1-2", name:"Step back to create space, then jab-cross", tags:["defense","combo"]},
+    {n:"step out, 1-2", name:"Step out at an angle, jab-cross", tags:["defense","combo"]},
+    {n:"slip inside, 2", name:"Slip inside the jab, counter with a cross", tags:["defense","counter"]},
+    {n:"parry, 2", name:"Parry the jab, counter with a cross", tags:["defense","counter"]},
+    {n:"block, 1-2", name:"Block the return, counter jab-cross", tags:["defense","combo"]},
+    {n:"circle left, 1-2", name:"Circle away to the left, jab-cross", tags:["defense"]},
+    {n:"circle right, 1-2", name:"Circle away to the right, jab-cross", tags:["defense","southpaw"]},
+    {n:"jab feint, 2", name:"Feint the jab to draw a reaction, then cross", tags:["jab","counter"]},
+    {n:"circle right, 1-1", name:"Circle away to the right, double jab", tags:["southpaw","jab","speed"]},
+    {n:"3-2-2", name:"Lead hook, cross, cross — load the power hand twice", tags:["power","combo"]},
+    {n:"1, 1 to the body", name:"Jab, jab to the body — keep the pressure downstairs", tags:["body","jab"]},
+    {n:"3 to the body", name:"Lead hook to the body", tags:["body"]},
+    {n:"duck, 2", name:"Duck under the hook, counter with a cross", tags:["defense","counter"]},
+    {n:"circle right, 2", name:"Circle away to the right, cross", tags:["southpaw"]}
+  ],
+  intermediate: [
+    {n:"1-2-3-2", name:"Jab, cross, lead hook, cross", tags:["combo"]},
+    {n:"2-3-2", name:"Cross, lead hook, cross", tags:["power"]},
+    {n:"1-6-3-2", name:"Jab, rear uppercut, lead hook, cross", tags:["power","combo"]},
+    {n:"1-2-5-2", name:"Jab, cross, lead uppercut, cross", tags:["power","combo"]},
+    {n:"3-2-3-2", name:"Lead hook, cross, lead hook, cross", tags:["power"]},
+    {n:"1-1-2-3-2", name:"Jab, jab, cross, lead hook, cross", tags:["combo"]},
+    {n:"1-2-1-2", name:"Jab, cross, jab, cross — fast hands", tags:["jab","speed","combo"]},
+    {n:"1, 2 to the body, 3 high", name:"Jab, cross downstairs, hook upstairs", tags:["body","combo"]},
+    {n:"2 to the body, 2 high", name:"Cross to the body, then cross to the head — same hand, two levels", tags:["body","power"]},
+    {n:"3 to the body, 2 high", name:"Lead hook to the body, cross upstairs", tags:["body","combo"]},
+    {n:"1-2, 3 to the body, 2 high", name:"Jab, cross, hook downstairs, cross upstairs", tags:["body","combo"]},
+    {n:"slip inside, 2-3", name:"Slip inside the jab, counter cross-hook", tags:["counter","defense"]},
+    {n:"slip outside, 3-2", name:"Slip outside the cross, counter hook-cross", tags:["counter","defense"]},
+    {n:"roll under, 3-2", name:"Roll under the hook, counter hook-cross", tags:["counter","defense"]},
+    {n:"pull back, 2", name:"Pull back out of range, counter with the cross", tags:["counter","defense"]},
+    {n:"parry, 2-3", name:"Parry the jab, counter cross-hook", tags:["counter","defense"]},
+    {n:"duck, 2-3", name:"Duck under the hook, counter cross-hook", tags:["counter","defense"]},
+    {n:"pivot off lead foot, 2", name:"Pivot off the lead foot to a new angle, cross", tags:["defense","southpaw"]},
+    {n:"pivot off rear foot, 3-2", name:"Pivot off the rear foot, hook-cross", tags:["defense","southpaw"]},
+    {n:"angle out, 1-2", name:"Step to a 45° outside angle, jab-cross", tags:["southpaw","defense"]},
+    {n:"jab feint, cross feint, 1-2", name:"Feint the jab, feint the cross, then actually throw jab-cross", tags:["counter"]},
+    {n:"shoulder feint, 3-2", name:"Shoulder feint to draw a reaction, hook-cross", tags:["counter","power"]},
+    {n:"fake high go low, 2 to the body", name:"Level feint up top, drop down to the body", tags:["body","counter"]},
+    {n:"1-1-1-2", name:"Triple jab, cross — speed and rhythm", tags:["jab","speed"]},
+    {n:"1-2-1-1", name:"Jab, cross, double jab — reset behind the jab", tags:["jab","speed","combo"]},
+    {n:"1, 1 to the body, 2", name:"Jab, jab to the body, cross — mix the levels behind the jab", tags:["jab","body"]},
+    {n:"angle out, 1-1", name:"Step to an outside angle, double jab", tags:["southpaw","jab"]},
+    {n:"2-3-2-3", name:"Cross, hook, cross, hook — rapid power-speed combo", tags:["speed","power","combo"]},
+    {n:"circle right, 3-2", name:"Circle away to the right, hook-cross", tags:["southpaw","power"]}
+  ],
+  advanced: [
+    {n:"1-2-3-2-3-2", name:"Six-piece: jab, cross, hook, cross, hook, cross", tags:["combo"]},
+    {n:"1-1-2-3-6-3", name:"Double jab, cross, hook, rear uppercut, hook", tags:["power","combo"]},
+    {n:"jab feint, 2-3-2", name:"Feint the jab, then cross-hook-cross", tags:["counter","combo"]},
+    {n:"slip inside, 1-2, pivot off rear foot, 2", name:"Slip inside, counter jab-cross, pivot off the rear foot, finish with a cross", tags:["counter","defense"]},
+    {n:"2-3-2, pivot off lead foot, 2", name:"Cross, hook, cross, pivot off the lead foot, cross again", tags:["defense","power"]},
+    {n:"1-6-3-2-3", name:"Jab, rear uppercut, lead hook, cross, lead hook", tags:["power","combo"]},
+    {n:"3-2-3-6-2", name:"Hook, cross, hook, rear uppercut, cross", tags:["power"]},
+    {n:"roll under, 3-2, slip outside, 2", name:"Roll the hook, counter hook-cross, slip the return, finish with a cross", tags:["counter","defense"]},
+    {n:"1, 2 to the body, 6 to the body, 3 high, 2 high", name:"Jab, cross to the body, rear uppercut to the body, hook upstairs, cross upstairs — full level change", tags:["body","power","combo"]},
+    {n:"step in feint, 1-1-2", name:"Fake stepping in to draw a reaction, then double jab-cross", tags:["counter"]},
+    {n:"1-2-3-2, slip inside, 3-2", name:"Standard four, slip the counter, finish hook-cross", tags:["defense","combo"]},
+    {n:"2-3-2-1-2", name:"Cross, hook, cross, jab, cross — five-piece closer", tags:["combo"]},
+    {n:"1, 2 to the body, 3 to the body, 2 high", name:"Jab, double body shot, cross upstairs", tags:["body","combo"]},
+    {n:"1-2, 3 to the body, 6 to the body, 3 high", name:"Jab, cross, hook to the body, uppercut to the body, hook high", tags:["body","power"]},
+    {n:"angle out, 1, 2 to the body, 3 high", name:"Step to an outside angle, jab, cross downstairs, hook upstairs", tags:["southpaw","body"]},
+    {n:"pivot off rear foot, 1-2, angle out, 2", name:"Pivot off the rear foot to reset the angle, jab-cross, step outside, finish with a cross", tags:["southpaw","defense"]},
+    {n:"shoulder feint, slip inside, 2-3", name:"Shoulder feint to bait a punch, slip inside it, counter cross-hook", tags:["counter","defense"]},
+    {n:"fake low go high, 6-3-2", name:"Fake to the body, go upstairs — rear uppercut, hook, cross", tags:["counter","power"]},
+    {n:"1-1, step in, 1-1-2", name:"Double jab, step in, double jab-cross again — pressure entry", tags:["defense"]},
+    {n:"1-2-3-2, slip, 1-2", name:"Four-piece, slip the counter, jab-cross — re-enter on an angle", tags:["defense","combo"]},
+    {n:"parry, 2, pivot off lead foot, 3-2", name:"Parry the jab, counter cross, pivot off the lead foot, hook-cross", tags:["counter","defense"]},
+    {n:"2-3, 3 to the body, 6 to the body, 3-2", name:"Cross, hook, hook to the body, uppercut to the body, hook-cross — full combination", tags:["body","power","combo"]},
+    {n:"1-1-1-2-2", name:"Triple jab, double cross — sharp hands, commit on the finish", tags:["jab","speed","combo"]},
+    {n:"1-2-1-2-1", name:"Jab-cross-jab-cross-jab — five-piece speed drill, stay on balance", tags:["jab","speed","combo"]},
+    {n:"1, 1 to the body, 1, 2", name:"Jab downstairs and upstairs, then cross — full range off the jab", tags:["jab","body","combo"]},
+    {n:"angle out, 1-1-2", name:"Angle step, double jab, cross — precise footwork with fast hands", tags:["southpaw","jab","speed"]},
+    {n:"3-2-3-2-3", name:"Hook, cross, hook, cross, hook — high-speed five-piece", tags:["speed","power","combo"]},
+    {n:"circle right, 3-2-3", name:"Circle away to the right, hook-cross-hook", tags:["southpaw","power"]}
+  ]
+};
+
+/* ================= ROUND TYPES ================= */
+const ROUND_TYPES = {
+  warmup:    {label:"Warm-Up",       objective:"Loosen up, find your range.",                 filter:c=>c.tags.includes('jab') && !c.tags.includes('power') && !c.tags.includes('counter'), progression:["1","1-1","1-2","1-1-2"], color:'#34d399', pace:'slow'},
+  jab:       {label:"Jab Focus",     objective:"Work behind the jab. Accuracy over power.",   filter:c=>c.tags.includes('jab'), progression:["1","1-1","1-2","1-2-1","1-2-3"], color:'#4f8ef7', pace:'fast'},
+  power:     {label:"Power",         objective:"Sit down on your shots. Turn the hip over.",  filter:c=>c.tags.includes('power'), color:'#e5484d', pace:'slow'},
+  flow:      {label:"Combo Flow",    objective:"Stay loose, chain it together.",              filter:c=>c.tags.includes('combo'), color:'#a78bfa', pace:'normal'},
+  speed:     {label:"Speed",         objective:"Hands up, in and out fast.",                  filter:c=>c.tags.includes('speed') || c.tags.includes('jab'), color:'#f3c94f', pace:'rapid'},
+  defense:   {label:"Defense & Movement", objective:"Head movement and footwork.",             filter:c=>c.tags.includes('defense'), color:'#34d1b6', pace:'normal'},
+  body:      {label:"Body Attack",   objective:"Work downstairs, take the legs out.",         filter:c=>c.tags.includes('body'), color:'#e5484d', pace:'slow'},
+  counter:   {label:"Counter Punching", objective:"Let it come to you, then make them pay.",  filter:c=>c.tags.includes('counter'), color:'#a78bfa', pace:'normal'},
+  southpaw:  {label:"Vs Southpaw",   objective:"Lead foot outside theirs. Control the angle.", filter:c=>c.tags.includes('southpaw'), color:'#4f8ef7', pace:'normal'},
+  pressure:  {label:"Pressure",      objective:"Walk them down. Cut the ring off.",            filter:c=>c.tags.includes('power') || c.tags.includes('combo'), color:'#e5484d', pace:'fast'},
+  technical: {label:"Technical",     objective:"Slow it down. Quality over output today.",     filter:c=>c.tags.includes('combo') || c.tags.includes('jab'), color:'#34d1b6', pace:'slow'},
+  conditioning:{label:"Conditioning",objective:"Output round. Don't let your hands drop.",     filter:c=>true, color:'#f3c94f', pace:'rapid'},
+  finisher:  {label:"Finisher",      objective:"Empty the tank. Finish on your feet, balanced.", filter:c=>true, color:'#e5484d', pace:'rapid'}
+};
+/* Each pace band = realistic range (seconds) for the gap BETWEEN combo callouts on top of throw time.
+   This is what actually makes a Speed round feel different from a Power round, not just intensity %. */
+const PACE_GAP = {
+  slow:   { min:6,   max:10 },   // power/body/technical/warmup — full recovery, no rushing the shot
+  normal: { min:4,   max:7  },   // flow/defense/counter/southpaw — standard working pace
+  fast:   { min:2.5, max:4.5},   // jab/pressure — snappy, in-and-out
+  rapid:  { min:1.5, max:3  }    // speed/conditioning/finisher — relentless, minimal gap
+};
+
+/* ================= TEMPLATES ================= */
+const TEMPLATES = [
+  { id:'burner', name:"Quick Burner", desc:"Short, sharp cardio session for when time's tight.",
+    seq:[
+      {type:'warmup', work:90, rest:30, intensity:50},
+      {type:'jab', work:120, rest:30, intensity:65},
+      {type:'power', work:120, rest:30, intensity:80},
+      {type:'flow', work:120, rest:30, intensity:75},
+      {type:'speed', work:90, rest:20, intensity:90},
+      {type:'finisher', work:90, rest:0, intensity:100}
+    ], goals:["6 rounds","Sharpen the jab","Finish on your feet"] },
+  { id:'standard', name:"Standard Session", desc:"Covers every skill area, builds toward a hard finish.",
+    seq:[
+      {type:'warmup', work:120, rest:45, intensity:50},
+      {type:'jab', work:150, rest:45, intensity:60},
+      {type:'power', work:150, rest:45, intensity:75},
+      {type:'flow', work:150, rest:45, intensity:70},
+      {type:'jab', work:150, rest:45, intensity:65},
+      {type:'power', work:150, rest:45, intensity:80},
+      {type:'flow', work:150, rest:45, intensity:75},
+      {type:'speed', work:120, rest:30, intensity:90},
+      {type:'defense', work:150, rest:45, intensity:65},
+      {type:'finisher', work:150, rest:0, intensity:100}
+    ], goals:["10 rounds","High work rate throughout","Finish every combo balanced"] },
+  { id:'heavybag', name:"Heavy Bag Power", desc:"Longer rests, fewer but heavier rounds.",
+    seq:[
+      {type:'warmup', work:120, rest:75, intensity:45},
+      {type:'power', work:180, rest:90, intensity:80},
+      {type:'flow', work:180, rest:75, intensity:70},
+      {type:'power', work:180, rest:90, intensity:85},
+      {type:'defense', work:150, rest:75, intensity:60},
+      {type:'power', work:180, rest:90, intensity:90},
+      {type:'finisher', work:150, rest:0, intensity:100}
+    ], goals:["7 rounds","Turn the hip over","Stay balanced after power shots"] },
+  { id:'technical', name:"Technical Sharpening", desc:"Doubles through every focus area for a full technical workout.",
+    seq:[
+      {type:'warmup', work:120, rest:45, intensity:40},
+      {type:'jab', work:150, rest:45, intensity:55},
+      {type:'power', work:150, rest:45, intensity:65},
+      {type:'flow', work:150, rest:45, intensity:60},
+      {type:'defense', work:150, rest:45, intensity:55},
+      {type:'speed', work:120, rest:30, intensity:85},
+      {type:'jab', work:150, rest:45, intensity:60},
+      {type:'power', work:150, rest:45, intensity:70},
+      {type:'flow', work:150, rest:45, intensity:65},
+      {type:'defense', work:150, rest:45, intensity:60},
+      {type:'speed', work:120, rest:30, intensity:90},
+      {type:'finisher', work:150, rest:0, intensity:100}
+    ], goals:["12 rounds","Technical precision over speed","Stay sharp into the back half"] },
+  { id:'fightcamp', name:"Fight Camp Builder", desc:"Pressure, counters, and a southpaw round.",
+    seq:[
+      {type:'warmup', work:120, rest:45, intensity:45},
+      {type:'jab', work:150, rest:45, intensity:60},
+      {type:'pressure', work:150, rest:45, intensity:80},
+      {type:'counter', work:150, rest:45, intensity:70},
+      {type:'southpaw', work:150, rest:45, intensity:65},
+      {type:'body', work:150, rest:45, intensity:75},
+      {type:'conditioning', work:150, rest:30, intensity:95},
+      {type:'finisher', work:150, rest:0, intensity:100}
+    ], goals:["8 rounds","Cut the ring off","Control range against a southpaw look"] },
+  { id:'express', name:"Express Round", desc:"Bare minimum — when you've genuinely only got ten minutes.",
+    seq:[
+      {type:'warmup', work:60, rest:20, intensity:50},
+      {type:'jab', work:90, rest:20, intensity:70},
+      {type:'flow', work:90, rest:20, intensity:80},
+      {type:'finisher', work:90, rest:0, intensity:100}
+    ], goals:["4 rounds","Quick and dirty","Don't skip the warm-up"] },
+  { id:'southpaw_spec', name:"Southpaw Specialist", desc:"Built entirely around solving a southpaw look — angles, lead foot, counters.",
+    seq:[
+      {type:'warmup', work:120, rest:45, intensity:45},
+      {type:'jab', work:150, rest:45, intensity:60},
+      {type:'southpaw', work:150, rest:45, intensity:65},
+      {type:'southpaw', work:150, rest:45, intensity:70},
+      {type:'counter', work:150, rest:45, intensity:70},
+      {type:'southpaw', work:150, rest:30, intensity:80},
+      {type:'finisher', work:150, rest:0, intensity:100}
+    ], goals:["7 rounds","Control the lead foot","Stop squaring up"] },
+  { id:'body_snatcher', name:"Body Snatcher", desc:"Heavy on the body attack — the round most people skip and shouldn't.",
+    seq:[
+      {type:'warmup', work:120, rest:45, intensity:45},
+      {type:'body', work:150, rest:45, intensity:70},
+      {type:'power', work:150, rest:45, intensity:75},
+      {type:'body', work:150, rest:45, intensity:80},
+      {type:'flow', work:150, rest:45, intensity:70},
+      {type:'body', work:150, rest:30, intensity:90},
+      {type:'finisher', work:150, rest:0, intensity:100}
+    ], goals:["7 rounds","Bend the knees, don't just bend over","Go up top after every body shot"] },
+  { id:'defense_master', name:"Defense Masterclass", desc:"Slips, rolls, pivots, counters — built for someone tired of just trading.",
+    seq:[
+      {type:'warmup', work:120, rest:45, intensity:40},
+      {type:'defense', work:150, rest:45, intensity:55},
+      {type:'counter', work:150, rest:45, intensity:60},
+      {type:'defense', work:150, rest:45, intensity:65},
+      {type:'counter', work:150, rest:45, intensity:70},
+      {type:'defense', work:150, rest:30, intensity:75},
+      {type:'finisher', work:150, rest:0, intensity:100}
+    ], goals:["7 rounds","Move your head on every exchange","Counter off the slip, don't just avoid"] },
+  { id:'speed_demon', name:"Speed Demon", desc:"Fast hands, short rests, high call frequency throughout.",
+    seq:[
+      {type:'warmup', work:90, rest:15, intensity:55},
+      {type:'speed', work:120, rest:15, intensity:85},
+      {type:'jab', work:120, rest:15, intensity:80},
+      {type:'speed', work:120, rest:15, intensity:90},
+      {type:'flow', work:120, rest:15, intensity:85},
+      {type:'finisher', work:120, rest:0, intensity:100}
+    ], goals:["6 rounds","Hands back faster than they go out","Stay on the balls of your feet"] }
+];
+
+/* ── FREQ PATCH: add frequency multipliers to BUILTIN combos ────────────────
+   high=3x, normal=1x, low=0.35x
+   Real bag work: 70% pure punches, 20% hooks/uppercuts, 10% movement/feints */
+const FREQ_HIGH_BEG = new Set(['1','1-2','1-1','1-1-2','1-2-3','2-3','3-2','1-2-2','1-2-1']);
+const FREQ_LOW_BEG  = new Set(['step in, 1-2','step back, 1-2','step out, 1-2','slip inside, 2','parry, 2','block, 1-2','circle left, 1-2','circle right, 1-2','jab feint, 2']);
+const FREQ_HIGH_INT = new Set(['1-2-3-2','2-3-2','1-6-3-2','1-2-5-2','3-2-3-2','1-1-2-3-2','1-2-1-2','1-1-1-2','1-2-1-1']);
+const FREQ_LOW_INT  = new Set(['jab feint, cross feint, 1-2','pivot off lead foot, 2','pivot off rear foot, 3-2','shoulder feint, 3-2','fake high go low, 2 to the body']);
+const FREQ_HIGH_ADV = new Set(['1-2-3-2-3-2','1-1-2-3-6-3','1-6-3-2-3','3-2-3-6-2','2-3-2-1-2','1-1-1-2-2','1-2-1-2-1']);
+const FREQ_LOW_ADV  = new Set(['jab feint, 2-3-2','slip inside, 1-2, pivot off rear foot, 2','roll under, 3-2, slip outside, 2','shoulder feint, slip inside, 2-3','fake low go high, 6-3-2','pivot off rear foot, 1-2, angle out, 2','parry, 2, pivot off lead foot, 3-2']);
+(function patchFreq(){
+  BUILTIN.beginner.forEach(c=>{
+    c.freq = FREQ_HIGH_BEG.has(c.n) ? 'high' : FREQ_LOW_BEG.has(c.n) ? 'low' : 'normal';
+  });
+  BUILTIN.intermediate.forEach(c=>{
+    c.freq = FREQ_HIGH_INT.has(c.n) ? 'high' : FREQ_LOW_INT.has(c.n) ? 'low' : 'normal';
+  });
+  BUILTIN.advanced.forEach(c=>{
+    c.freq = FREQ_HIGH_ADV.has(c.n) ? 'high' : FREQ_LOW_ADV.has(c.n) ? 'low' : 'normal';
+  });
+})();
+
+/* ── ROUND CATEGORY CAPS: hard limits regardless of weighting ── */
+const ROUND_CATEGORY_CAPS = {
+  default:    {feint:2, footwork:2, defense:2},
+  defense:    {feint:2, footwork:3, defense:8},
+  counter:    {feint:3, footwork:2, defense:6},
+  speed:      {feint:1, footwork:1, defense:1},
+  warmup:     {feint:0, footwork:1, defense:1},
+  jab:        {feint:1, footwork:1, defense:1},
+  body:       {feint:1, footwork:1, defense:2}
+};
+
+/* ── VARIANT OBJECTIVES: quick, single-clause phrases spoken at the start of
+   every round (see speakRoundIntro). Kept atomic on purpose -- stitching two
+   clauses into one clip ("Loosen up. Find your range.") read as a run-on
+   line, so each type gets a flat pool of short standalone phrases and one
+   is picked at random per round instead. ── */
+const VARIANT_OBJ = {
+  warmup:      ["Loosen up.","Find your range.","Easy rhythm.","Just getting warm.","Get the blood moving.","Nice and easy to start."],
+  jab:         ["Work behind the jab.","Accuracy over power.","Double jab entries.","Mix up the timing.","Jab to create openings.","Don't throw for the sake of it."],
+  power:       ["Sit down on your shots.","Turn the hip over.","More rotation this time.","Full hip drive on every cross.","Power endurance.","Keep the quality up late."],
+  flow:        ["Stay loose.","Chain it together.","Smoother this time.","Less gap between punches.","High output.","Don't let your hands drop."],
+  speed:       ["Hands up, in and out fast.","Faster hands.","Don't sacrifice technique for speed.","Maximum hand speed.","Stay light on your feet."],
+  defense:     ["Head movement and footwork.","Tighter defense.","Move as soon as you throw.","Defense into counter.","Don't just avoid, answer back."],
+  body:        ["Work downstairs.","Take the legs out.","Level changes.","Mix body shots with head shots.","Body then head.","Force them to make a choice."],
+  counter:     ["Let it come to you, then make them pay.","Read and react.","Counter off every movement.","Sharper counters.","Time it earlier."],
+  southpaw:    ["Lead foot outside theirs.","Control the angle.","Tighter footwork.","Don't let them square up.","Force the angle, then unload."],
+  pressure:    ["Walk them down.","Cut the ring off.","More pressure.","Close the distance.","Pressure and combinations.","Walk through the return."],
+  technical:   ["Slow it down.","Quality over output.","Every combo sharp.","No lazy punches.","Technical precision.","Focus on the follow-through."],
+  conditioning:["Output round.","Don't let your hands drop.","Keep the intensity.","You're stronger than the fatigue.","Everything left in the tank."],
+  finisher:    ["Empty the tank.","Finish on your feet, balanced.","Last round.","Everything you've got."]
+};
+function getVariantObj(type){
+  const v = VARIANT_OBJ[type];
+  if(!v) return ROUND_TYPES[type]?.objective || '';
+  return v[Math.floor(Math.random()*v.length)];
+}
+function tplDuration(t){ return Math.round(t.seq.reduce((a,r)=>a+r.work+r.rest,0)/60); }
+
+/* ================= STORAGE ================= */
+function loadCustom(){ try{ return JSON.parse(localStorage.getItem('corner_custom_combos')) || {beginner:[],intermediate:[],advanced:[]}; } catch(e){ return {beginner:[],intermediate:[],advanced:[]}; } }
+function saveCustom(d){ localStorage.setItem('corner_custom_combos', JSON.stringify(d)); }
+let customCombos = loadCustom();
+const UNLOCKS = [
+  {level:3, tier:'intermediate', n:"1-2, slip inside, 2", name:"Unlock: jab-cross, slip the return, cross", tags:['counter','defense'], freq:'normal'},
+  {level:5, tier:'advanced',     n:"1-2-3-5-2", name:"Unlock: five-piece with lead uppercut inside", tags:['power','combo'], freq:'normal'},
+  {level:8, tier:'advanced',     n:"2-5-3-2, pivot off lead foot", name:"Unlock: power four, pivot out", tags:['power','defense'], freq:'normal'}
+];
+function unlockedFor(tier){
+  const lvl = computeStats().level || 1;
+  return UNLOCKS.filter(u=>u.tier===tier && lvl>=u.level).map(u=>({n:u.n,name:u.name,tags:u.tags,freq:u.freq,unlock:true}));
+}
+function poolFor(level){ return BUILTIN[level].concat(unlockedFor(level)).concat((customCombos[level]||[]).map(c=>({...c, custom:true}))); }
+function loadHistory(){ try{ return JSON.parse(localStorage.getItem('corner_history')) || []; } catch(e){ return []; } }
+function saveHistory(h){ localStorage.setItem('corner_history', JSON.stringify(h)); }
+let history = loadHistory();
+
+function loadSaved(){ try{ return JSON.parse(localStorage.getItem('corner_saved_sessions')) || []; } catch(e){ return []; } }
+function saveSaved(s){ localStorage.setItem('corner_saved_sessions', JSON.stringify(s)); }
+let savedSessions = loadSaved();
+function promptSaveSession(seq, goals){
+  const name = prompt("Name this session:");
+  if(!name || !name.trim()) return;
+  savedSessions.push({ id:'s'+Date.now(), name:name.trim(), seq, goals: goals||[] });
+  saveSaved(savedSessions);
+  buildTplList();
+  alert('Saved! Find it under "My Sessions" in the Sessions tab.');
+}
+function deleteSaved(id){
+  savedSessions = savedSessions.filter(s=>s.id!==id);
+  saveSaved(savedSessions);
+  buildTplList();
+}
+function startSaved(id){
+  const s = savedSessions.find(x=>x.id===id);
+  if(!s) return;
+  openSessionDetail({ name:s.name, desc:'Your saved session.', seq:s.seq, goals:s.goals||[], savedId:s.id });
+}
+
+/* ================= STATE ================= */
+let settings = { level:'beginner', focus:'all', roundSec:120, restSec:45, rounds:5, intensity:70 };
+let libLevel = 'beginner';
+let pendingTags = [];
+let state = {};
+let timerInterval = null;
+let currentStance = localStorage.getItem('corner_stance') || 'orthodox'; // for mirrorForSouthpaw
+let coachStyle = localStorage.getItem('corner_coach') || 'balanced';
+let smartDur = 30;
+let favCombos = new Set(JSON.parse(localStorage.getItem('corner_favs')||'[]'));
+let profile = JSON.parse(localStorage.getItem('corner_profile2')||'{}');
+let surveyAnswers = { hardest:null, complete:null, feel:null };
+let speechRate = parseFloat(localStorage.getItem('corner_rate')||'1.05');
+let selectedVoiceURI = localStorage.getItem('corner_voice_uri') || null;
+
+/* ================= VOICE SETUP ================= */
+/* Novelty / joke system voices (macOS "Grandma", "Zarvox", "Bad News" etc.) get filtered out
+   entirely — they clutter the list and nobody wants their coach to sound like a cartoon. */
+const NOVELTY_VOICE_RE = /\b(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|grandma|grandpa|hysterical|jester|junior|organ|pipe organ|princess|ralph|superstar|trinoids|whisper|zarvox|wobble|deranged|rocko|shelley|sandy|eddy|reed|flo)\b/i;
+function populateVoices(){
+  const voices = window.speechSynthesis.getVoices().filter(v=>v.lang.startsWith('en') && !NOVELTY_VOICE_RE.test(v.name));
+  const list = voices.length ? voices : window.speechSynthesis.getVoices().filter(v=>!NOVELTY_VOICE_RE.test(v.name));
+  const row = document.getElementById('voice-row');
+  if(!list.length){ row.innerHTML = '<div class="hint">Voices loading… try again in a second.</div>'; return; }
+  if(!selectedVoiceURI && list.length){
+    const pref = list.find(v=>/samantha|karen|daniel|moira|google uk english (male|female)|google us english/i.test(v.name));
+    selectedVoiceURI = (pref||list[0]).voiceURI;
+  }
+  row.innerHTML = list.map(v=>`<div class="voice-pill ${v.voiceURI===selectedVoiceURI?'active':''}" onclick="selectVoice('${v.voiceURI.replace(/'/g,"\\'")}')">${v.name.replace('Microsoft ','').replace('Google ','')}</div>`).join('');
+}
+function selectVoice(uri){ selectedVoiceURI = uri; localStorage.setItem('corner_voice_uri', uri); populateVoices(); }
+function setRate(r){
+  speechRate = r;
+  localStorage.setItem('corner_rate', r);
+  ['rate-slow','rate-normal','rate-fast'].forEach(id=>{ const e=document.getElementById(id); if(e) e.classList.remove('active'); });
+  if(r===0.9) document.getElementById('rate-slow').classList.add('active');
+  else if(r===1.25) document.getElementById('rate-fast').classList.add('active');
+  else document.getElementById('rate-normal').classList.add('active');
+}
+const COACH_LINES = {
+  balanced:  ["Good rhythm. Stay with it.","Nice work. Keep breathing.","Halfway there. Keep the form tight.","Looking sharp. Stay relaxed."],
+  drill:     ["Come on, pick it up!","Do not slow down now!","Push! This is where it counts!","Faster! You have more than that!"],
+  technical: ["Check your guard. Elbows in.","Snap and return. No lazy arms.","Balance first. Power second.","Rotate the hip. Every single punch."]
+};
+const COACH_TEST = { balanced:"Jab, cross, hook. Let's work.", drill:"Jab! Cross! Hook! Move!", technical:"Jab, cross, hook. Watch the elbow on that hook." };
+function setCoach(style, silent){
+  coachStyle = style; localStorage.setItem('corner_coach', style);
+  ['coach-balanced','coach-drill','coach-technical'].forEach(id=>{const e=document.getElementById(id); if(e) e.classList.toggle('active', id==='coach-'+style);});
+  if(!silent) speakGeneratedOrFallback(COACH_TEST[style]);
+}
+function testVoice(){ speakGeneratedOrFallback(COACH_TEST[coachStyle] || "Jab, cross, hook."); }
+if('speechSynthesis' in window){
+  window.speechSynthesis.onvoiceschanged = populateVoices;
+  populateVoices();
+}
+
+/* ================= TABS / NAV ================= */
+function switchTab(name){
+  document.querySelectorAll('.navitem').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.querySelectorAll('.tabpane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pane-'+name).classList.add('active');
+  if(name==='progress'){ renderProgress(); renderXP(); renderCalendar(); }
+  if(name==='home'){ renderHomeStats(); renderChallenge(); }
+}
+
+/* ================= HOME ================= */
+function renderHomeStats(){
+  const s = computeStats();
+  document.getElementById('streak-mini').textContent = s.streak;
+  const now = new Date();
+  const weekAgo = now.getTime() - 7*86400000;
+  const weekSessions = history.filter(h=>new Date(h.date).getTime()>weekAgo);
+  document.getElementById('home-sessions').textContent = weekSessions.length;
+  document.getElementById('home-rounds').textContent = weekSessions.reduce((a,h)=>a+h.rounds,0);
+  document.getElementById('subgreeting').textContent = s.sessions ? `${s.streak} day streak · ${s.sessions} sessions logged` : "Your first session is waiting.";
+}
+
+/* ================= SESSIONS UI ================= */
+const levels = [
+  {key:'beginner', label:'Beginner', sub:'2-3 punch'},
+  {key:'intermediate', label:'Intermediate', sub:'4-5 punch'},
+  {key:'advanced', label:'Advanced', sub:'5-7 punch'}
+];
+function buildTplList(){
+  document.getElementById('tpl-list').innerHTML = TEMPLATES.map(t=>{
+    const mins = tplDuration(t);
+    const avgInt = Math.round(t.seq.reduce((a,r)=>a+r.intensity,0)/t.seq.length);
+    const segs = t.seq.map(r=>`<div style="flex:${r.work};background:${ROUND_TYPES[r.type].color}"></div>`).join('');
+    return `<div class="tpl-card" onclick='openSessionDetailById("${t.id}")'>
+      <div class="tpl-top"><div class="tpl-name">${t.name}</div><div class="tpl-dur">~${mins} min</div></div>
+      <div class="tpl-desc">${t.desc}</div>
+      <div class="tpl-bar">${segs}</div>
+      <div class="tpl-meta"><span><b>${t.seq.length}</b> rounds</span><span>avg <b>${avgInt}%</b> intensity</span></div>
+      <div class="tpl-goals">${t.goals.join(' · ')}</div>
+    </div>`;
+  }).join('');
+
+  const mySessionsHTML = savedSessions.length ? `
+    <div class="section-title">My Sessions</div>
+    ${savedSessions.map(s=>{
+      const mins = Math.round(s.seq.reduce((a,r)=>a+r.work+r.rest,0)/60);
+      const segs = s.seq.map(r=>`<div style="flex:${r.work};background:${ROUND_TYPES[r.type].color}"></div>`).join('');
+      return `<div class="tpl-card" onclick="startSaved('${s.id}')">
+        <div class="tpl-top"><div class="tpl-name">${s.name}</div><div style="display:flex;align-items:center;gap:8px;"><div class="tpl-dur">~${mins} min</div><button class="del-btn" onclick="event.stopPropagation();deleteSaved('${s.id}')">×</button></div></div>
+        <div class="tpl-bar">${segs}</div>
+        <div class="tpl-meta"><span><b>${s.seq.length}</b> rounds</span></div>
+      </div>`;
+    }).join('')}
+  ` : '';
+  document.getElementById('my-sessions').innerHTML = mySessionsHTML;
+}
+
+/* ============ SESSION DETAIL PAGE ============ */
+let detailSession = null;     // {name, desc, seq, goals, savedId?}
+let detailLevel = 'beginner';
+let detailWorkMode = 'standard';   // 'shorter'|'standard'|'longer'|'custom'
+let detailWorkCustomSec = 120;     // exact override applied to every round's work time
+let detailRestMode = 'standard';
+let detailRestCustomSec = 45;      // exact override applied to every round's rest (rounds with 0 rest stay 0)
+let detailPaceMode = 'normal';     // 'faster'|'normal'|'slower'|'custom'
+let detailPaceCustomSec = 5;       // exact override for the gap between every callout, ignoring punch-count/intensity
+
+const WORK_SCALES = {shorter:0.7, standard:1, longer:1.4};
+const REST_SCALES = {shorter:0.6, standard:1, longer:1.6};
+const PACE_MULTS  = {faster:0.7, normal:1, slower:1.4};
+
+function openSessionDetailById(id){ openSessionDetail(TEMPLATES.find(t=>t.id===id)); }
+function openSessionDetail(session){
+  detailSession = session;
+  detailLevel = profile.skill || 'beginner';
+  detailWorkMode = 'standard'; detailRestMode = 'standard'; detailPaceMode = 'normal';
+  const avgWork = Math.round(session.seq.reduce((a,r)=>a+r.work,0)/session.seq.length/5)*5;
+  const restRounds = session.seq.filter(r=>r.rest>0);
+  const avgRest = restRounds.length ? Math.round(restRounds.reduce((a,r)=>a+r.rest,0)/restRounds.length/5)*5 : 45;
+  detailWorkCustomSec = avgWork || 120;
+  detailRestCustomSec = avgRest || 45;
+  detailPaceCustomSec = 5;
+  document.getElementById('detail-title').textContent = session.name;
+  document.getElementById('detail-desc').textContent = session.desc || '';
+  renderDetailControls();
+  renderDetailBreakdown();
+  switchView('view-session-detail');
+}
+function closeSessionDetail(){ switchView('view-home'); switchTab('quick'); }
+
+function customStepperHTML(id, value, unit, min, max, step){
+  return `<div class="stepper" style="margin-top:8px;">
+    <button onclick="adjustDetailCustom('${id}',-${step})">−</button>
+    <div class="stepper-val">${value}${unit}<small>exact value</small></div>
+    <button onclick="adjustDetailCustom('${id}',${step})">+</button>
+  </div>`;
+}
+function renderDetailControls(){
+  document.getElementById('detail-level-row').innerHTML = levels.map(l=>
+    `<div class="pill ${l.key===detailLevel?'active':''}" onclick="setDetailLevel('${l.key}')">${l.label}<small>${l.sub}</small></div>`).join('');
+
+  const workOpts = [{v:'shorter',l:'Shorter'},{v:'standard',l:'Standard'},{v:'longer',l:'Longer'},{v:'custom',l:'Custom'}];
+  document.getElementById('detail-worklen-row').innerHTML = workOpts.map(o=>
+    `<div class="pill ${o.v===detailWorkMode?'active':''}" onclick="setDetailMode('work','${o.v}')">${o.l}</div>`).join('');
+  document.getElementById('detail-work-custom').innerHTML = detailWorkMode==='custom'
+    ? customStepperHTML('work', `${Math.floor(detailWorkCustomSec/60)}:${(detailWorkCustomSec%60).toString().padStart(2,'0')}`, '', 0, 0, 15) : '';
+
+  const restOpts = [{v:'shorter',l:'Shorter'},{v:'standard',l:'Standard'},{v:'longer',l:'Longer'},{v:'custom',l:'Custom'}];
+  document.getElementById('detail-restlen-row').innerHTML = restOpts.map(o=>
+    `<div class="pill ${o.v===detailRestMode?'active':''}" onclick="setDetailMode('rest','${o.v}')">${o.l}</div>`).join('');
+  document.getElementById('detail-rest-custom').innerHTML = detailRestMode==='custom'
+    ? customStepperHTML('rest', `${Math.floor(detailRestCustomSec/60)}:${(detailRestCustomSec%60).toString().padStart(2,'0')}`, '', 0, 0, 15) : '';
+
+  const paceOpts = [{v:'faster',l:'Faster'},{v:'normal',l:'Normal'},{v:'slower',l:'Slower'},{v:'custom',l:'Custom'}];
+  document.getElementById('detail-pace-row').innerHTML = paceOpts.map(o=>
+    `<div class="pill ${o.v===detailPaceMode?'active':''}" onclick="setDetailMode('pace','${o.v}')">${o.l}</div>`).join('');
+  document.getElementById('detail-pace-custom').innerHTML = detailPaceMode==='custom'
+    ? customStepperHTML('pace', detailPaceCustomSec.toFixed(1), 's between calls', 0, 0, 0) : '';
+}
+function setDetailLevel(k){ detailLevel=k; renderDetailControls(); renderDetailBreakdown(); }
+function setDetailMode(kind, mode){
+  if(kind==='work') detailWorkMode=mode;
+  if(kind==='rest') detailRestMode=mode;
+  if(kind==='pace') detailPaceMode=mode;
+  renderDetailControls(); renderDetailBreakdown();
+}
+function adjustDetailCustom(kind, deltaSec){
+  if(kind==='work'){ detailWorkCustomSec = Math.max(20, Math.min(600, detailWorkCustomSec+deltaSec)); }
+  if(kind==='rest'){ detailRestCustomSec = Math.max(0, Math.min(180, detailRestCustomSec+deltaSec)); }
+  if(kind==='pace'){ detailPaceCustomSec = Math.max(1.5, Math.min(20, +(detailPaceCustomSec+deltaSec).toFixed(1))); }
+  renderDetailControls(); renderDetailBreakdown();
+}
+
+function computeDetailSeq(){
+  return detailSession.seq.map(r => {
+    let work;
+    if(detailWorkMode==='custom') work = detailWorkCustomSec;
+    else work = Math.max(20, Math.round((r.work*WORK_SCALES[detailWorkMode])/5)*5);
+
+    let rest;
+    if(r.rest<=0) rest = 0;
+    else if(detailRestMode==='custom') rest = detailRestCustomSec;
+    else rest = Math.max(10, Math.round((r.rest*REST_SCALES[detailRestMode])/5)*5);
+
+    const out = { type:r.type, work, rest, intensity:r.intensity };
+    if(detailPaceMode==='custom') out.paceOverrideSec = detailPaceCustomSec;
+    else out.paceMult = PACE_MULTS[detailPaceMode];
+    return out;
+  });
+}
+function renderDetailBreakdown(){
+  const seq = computeDetailSeq();
+  const totalSec = seq.reduce((a,r)=>a+r.work+r.rest,0);
+  document.getElementById('detail-total').textContent = Math.round(totalSec/60)+' min';
+  document.getElementById('detail-breakdown').innerHTML = seq.map((r,i)=>{
+    const rt = ROUND_TYPES[r.type];
+    let gapAtIntensity;
+    if(r.paceOverrideSec){
+      gapAtIntensity = r.paceOverrideSec.toFixed(1);
+    } else {
+      const band = PACE_GAP[rt.pace];
+      const min = (band.min*r.paceMult).toFixed(1), max = (band.max*r.paceMult).toFixed(1);
+      gapAtIntensity = (max - (max-min)*(r.intensity/100)).toFixed(1);
+    }
+    return `<div class="breakdown-row">
+      <div class="btop"><span><span class="bdot" style="background:${rt.color}"></span>${i+1}. ${rt.label}</span><span>${r.intensity}%</span></div>
+      <div class="bmeta">
+        <span>Work <b>${Math.floor(r.work/60)}:${(r.work%60).toString().padStart(2,'0')}</b></span>
+        <span>Rest <b>${r.rest>0 ? Math.floor(r.rest/60)+':'+(r.rest%60).toString().padStart(2,'0') : '—'}</b></span>
+        <span>Callout gap <b>~${gapAtIntensity}s</b></span>
+      </div>
+    </div>`;
+  }).join('');
+  const sampleType = seq.find(r=>r.type!=='warmup')?.type || seq[0].type;
+  const pool = getPoolForRound(detailLevel, sampleType);
+  const examples = pool.slice(0,4).map(c=>c.n).join(' · ');
+  document.getElementById('detail-examples').textContent = `Example callouts at ${detailLevel}: ${examples}`;
+}
+function startFromDetail(){
+  const seq = computeDetailSeq();
+  const detTypeCount = {};
+  state = { plan: seq.map(r=>{ detTypeCount[r.type]=(detTypeCount[r.type]||0)+1; return {...r, objectiveText:getVariantObj(r.type,detTypeCount[r.type]-1), pool:getPoolForRound(detailLevel,r.type), level:detailLevel}; }), roundIndex:0, phase:'work', paused:false, currentCombo:null, label:detailSession.name, callCountInRound:0 };
+  launchPlan();
+}
+function saveDetailAsSession(){
+  const seq = computeDetailSeq().map(r=>({type:r.type, work:r.work, rest:r.rest, intensity:r.intensity, paceOverrideSec:r.paceOverrideSec, paceMult:r.paceMult}));
+  promptSaveSession(seq, detailSession.goals||[]);
+}
+
+function toggleCustomPanel(){
+  const panel = document.getElementById('custom-panel');
+  const chevron = document.getElementById('custom-chevron');
+  const open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'block';
+  chevron.textContent = open ? '›' : '⌄';
+}
+
+const focuses = [
+  {key:'all', label:'Flow'},{key:'jab', label:'Jab'},{key:'power', label:'Power'},{key:'defense', label:'Defense'},
+  {key:'body', label:'Body'},{key:'counter', label:'Counter'},{key:'southpaw', label:'Southpaw'},{key:'pressure', label:'Pressure'}
+];
+function buildPills(){
+  document.getElementById('focus-row').innerHTML = focuses.map(f=>`<div class="pill ${f.key===settings.focus?'active':''}" onclick="setFocus('${f.key}')">${f.label}</div>`).join('');
+  const ints = [{key:50,label:'Easy'},{key:70,label:'Moderate'},{key:85,label:'Hard'},{key:100,label:'All Out'}];
+  document.getElementById('intensity-row').innerHTML = ints.map(i=>`<div class="pill ${i.key===settings.intensity?'active':''}" onclick="setIntensity(${i.key})">${i.label}</div>`).join('');
+}
+function setFocus(k){ settings.focus=k; buildPills(); }
+function setIntensity(k){ settings.intensity=k; buildPills(); }
+function adjust(type, delta){
+  if(type==='round'){ settings.roundSec=Math.max(30,Math.min(600,settings.roundSec+delta)); renderTime('round-val',settings.roundSec,'per round'); }
+  if(type==='rest'){ settings.restSec=Math.max(0,Math.min(180,settings.restSec+delta)); renderTime('rest-val',settings.restSec,'per rest'); }
+  if(type==='rounds'){ settings.rounds=Math.max(1,Math.min(20,settings.rounds+delta)); document.getElementById('rounds-val').innerHTML=settings.rounds+'<small>rounds</small>'; }
+}
+function renderTime(id,sec,label){
+  const m=Math.floor(sec/60), s=sec%60;
+  document.getElementById(id).innerHTML = `${m}:${s.toString().padStart(2,'0')}<small>${label}</small>`;
+}
+
+/* ================= LIBRARY UI ================= */
+function buildLibLevelRow(){
+  document.getElementById('lib-level-row').innerHTML = levels.map(l=>`<div class="lib-level ${l.key===libLevel?'active':''}" onclick="setLibLevel('${l.key}')">${l.label}</div>`).join('');
+}
+function setLibLevel(k){ libLevel=k; buildLibLevelRow(); renderComboList(); }
+function toggleFav(n, btn){
+  if(favCombos.has(n)) favCombos.delete(n); else favCombos.add(n);
+  localStorage.setItem('corner_favs', JSON.stringify([...favCombos]));
+  btn.classList.toggle('on', favCombos.has(n));
+}
+function renderComboList(){
+  const pool = poolFor(libLevel);
+  const customStart = pool.length - (customCombos[libLevel]||[]).length;
+  let html = pool.map((c,i)=>`
+    <div class="combo-row">
+      <div class="left"><div class="num">${c.n}</div><div class="nm">${c.name||''}</div>
+      <div class="tags">${(c.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}${c.unlock?'<span class="lock-tag">unlocked</span>':''}</div></div>
+      <div style="display:flex;align-items:center;">
+        <button class="fav-btn ${favCombos.has(c.n)?'on':''}" onclick="toggleFav('${c.n.replace(/'/g,"\\'")}',this)">★</button>
+        ${c.custom?`<button class="del-btn" onclick="deleteCustom('${libLevel}', ${i-customStart})">×</button>`:''}
+      </div>
+    </div>`).join('');
+  const lvl = computeStats().level || 1;
+  const locked = UNLOCKS.filter(u=>u.tier===libLevel && lvl<u.level);
+  html += locked.map(u=>`
+    <div class="combo-row locked">
+      <div class="left"><div class="num">${u.n}</div><div class="nm">${u.name}</div>
+      <div class="tags"><span class="lock-tag">🔒 reach level ${u.level}</span></div></div>
+    </div>`).join('');
+  document.getElementById('combo-list').innerHTML = html;
+}
+function toggleTag(el){
+  el.classList.toggle('on');
+  const t=el.dataset.tag;
+  if(pendingTags.includes(t)) pendingTags=pendingTags.filter(x=>x!==t); else pendingTags.push(t);
+}
+function addCustomCombo(){
+  const n=document.getElementById('new-combo-n').value.trim();
+  const name=document.getElementById('new-combo-name').value.trim();
+  if(!n){ alert('Enter the combo numbers first, e.g. 1-2-3'); return; }
+  const tags = pendingTags.length?[...pendingTags]:['combo'];
+  customCombos[libLevel]=customCombos[libLevel]||[];
+  customCombos[libLevel].push({n,name,tags});
+  saveCustom(customCombos);
+  document.getElementById('new-combo-n').value=''; document.getElementById('new-combo-name').value='';
+  document.querySelectorAll('#new-combo-tags .tag-opt').forEach(t=>t.classList.remove('on'));
+  pendingTags=[];
+  renderComboList();
+}
+function deleteCustom(level,idx){ customCombos[level].splice(idx,1); saveCustom(customCombos); renderComboList(); }
+
+/* ================= PROGRESS ================= */
+const BADGES = [
+  {id:'first', ic:'🎯', label:'First Session', test:s=>s.sessions>=1},
+  {id:'streak3', ic:'✨', label:'3-Day Streak', test:s=>s.streak>=3},
+  {id:'streak7', ic:'🔥', label:'7-Day Streak', test:s=>s.streak>=7},
+  {id:'streak14', ic:'👑', label:'14-Day Streak', test:s=>s.streak>=14},
+  {id:'sessions10', ic:'🎽', label:'10 Sessions', test:s=>s.sessions>=10},
+  {id:'sessions25', ic:'🥊', label:'25 Sessions', test:s=>s.sessions>=25},
+  {id:'sessions50', ic:'🏆', label:'50 Sessions', test:s=>s.sessions>=50},
+  {id:'rounds100', ic:'🔔', label:'100 Rounds', test:s=>s.rounds>=100},
+  {id:'punches1000', ic:'👊', label:'1,000 Punches', test:s=>s.punches>=1000},
+  {id:'punches5000', ic:'💥', label:'5,000 Punches', test:s=>s.punches>=5000},
+  {id:'hours10', ic:'⏱️', label:'10 Hours Trained', test:s=>s.hours>=10},
+  {id:'level5', ic:'⭐', label:'Level 5 Fighter', test:s=>s.level>=5}
+];
+function computeStreak(){
+  if(!history.length) return 0;
+  const days = [...new Set(history.map(h=>h.date.slice(0,10)))].sort().reverse();
+  let streak=0, cursor=new Date();
+  for(let i=0;i<days.length;i++){
+    const d = new Date(days[i]);
+    const diff = Math.round((cursor-d)/86400000);
+    if(diff===0||diff===1){ streak++; cursor=d; } else break;
+  }
+  return streak;
+}
+function computeStats(){
+  const sessions=history.length;
+  const rounds=history.reduce((a,h)=>a+h.rounds,0);
+  const totalSec=history.reduce((a,h)=>a+h.totalSec,0);
+  const punches=history.reduce((a,h)=>a+h.punches,0);
+  const streak = computeStreak();
+  const xp = Math.round(sessions*30 + rounds*6 + punches/20 + streak*10);
+  const level = Math.floor(Math.sqrt(xp/120)) + 1;
+  return { sessions, rounds, hours: totalSec/3600, punches, streak, xp, level };
+}
+function renderXP(){
+  const s = computeStats();
+  const lvlFloor = Math.pow(s.level-1,2)*120, lvlCeil = Math.pow(s.level,2)*120;
+  const pct = Math.min(100, Math.round(((s.xp-lvlFloor)/(lvlCeil-lvlFloor))*100));
+  const L=document.getElementById('xp-level'), C=document.getElementById('xp-count'), F=document.getElementById('xp-fill');
+  if(L){ L.textContent=s.level; C.textContent=`${s.xp} / ${lvlCeil} XP`; F.style.width=pct+'%'; }
+}
+/* ── Weekly challenge (rotates by ISO week) ── */
+function isoWeek(d){ d=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const day=d.getUTCDay()||7; d.setUTCDate(d.getUTCDate()+4-day); const y0=new Date(Date.UTC(d.getUTCFullYear(),0,1)); return Math.ceil((((d-y0)/86400000)+1)/7); }
+const CHALLENGES = [
+  {label:'Complete 3 sessions this week', target:3, calc:w=>w.length, unit:'sessions'},
+  {label:'Land 600 punches this week', target:600, calc:w=>w.reduce((a,x)=>a+x.punches,0), unit:'punches'},
+  {label:'Train 45 minutes this week', target:45, calc:w=>Math.round(w.reduce((a,x)=>a+x.totalSec,0)/60), unit:'min'}
+];
+function renderChallenge(){
+  const el=document.getElementById('challenge-card'); if(!el) return;
+  const now=new Date();
+  const monday=new Date(now); const dw=(now.getDay()+6)%7; monday.setDate(now.getDate()-dw); monday.setHours(0,0,0,0);
+  const week=history.filter(x=>new Date(x.date)>=monday);
+  const ch=CHALLENGES[isoWeek(now)%CHALLENGES.length];
+  const cur=Math.min(ch.target, ch.calc(week));
+  const done=cur>=ch.target;
+  el.innerHTML=`<div class="ch-title">${done?'✅ Challenge complete!':'Weekly challenge'}</div>
+    <div class="ch-label">${ch.label}</div>
+    <div class="xp-bar" style="margin-top:9px;"><div class="xp-fill" style="width:${Math.round(cur/ch.target*100)}%"></div></div>
+    <div class="ch-meta">${cur} / ${ch.target} ${ch.unit}${done?' · +50 XP feeling':''}</div>`;
+}
+/* ── Calendar ── */
+function renderCalendar(){
+  const grid=document.getElementById('cal-grid'), title=document.getElementById('cal-title'); if(!grid) return;
+  const now=new Date(), y=now.getFullYear(), m=now.getMonth();
+  title.textContent = now.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  const first=new Date(y,m,1), startDow=(first.getDay()+6)%7, days=new Date(y,m+1,0).getDate();
+  const trained=new Set(history.map(x=>x.date.slice(0,10)));
+  let html=['Mo','Tu','We','Th','Fr','Sa','Su'].map(d=>`<div class="cal-dow">${d}</div>`).join('');
+  for(let i=0;i<startDow;i++) html+='<div class="cal-cell"></div>';
+  for(let d=1;d<=days;d++){
+    const key=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=d===now.getDate();
+    html+=`<div class="cal-cell ${trained.has(key)?'has':''} ${isToday?'today':''}">${d}</div>`;
+  }
+  grid.innerHTML=html;
+}
+/* ── CSV export ── */
+function exportCSV(){
+  if(!history.length){ alert('No sessions to export yet.'); return; }
+  const rows=[['date','session','rounds','minutes','punches','hardest_round','completed','feel']];
+  history.forEach(x=>rows.push([x.date, x.label, x.rounds, Math.round(x.totalSec/60), x.punches, x.hardest||'', x.complete||'', x.feel||'']));
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='corner-history.csv'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function renderProgress(){
+  const s = computeStats();
+  document.getElementById('streak-num').textContent = s.streak;
+  document.getElementById('stat-sessions').textContent = s.sessions;
+  document.getElementById('stat-rounds').textContent = s.rounds;
+  document.getElementById('stat-time').textContent = s.hours.toFixed(1);
+  document.getElementById('stat-punches').textContent = s.punches;
+  document.getElementById('badge-grid').innerHTML = BADGES.map(b=>`<div class="badge ${b.test(s)?'earned':''}"><div class="ic">${b.ic}</div><div class="bl">${b.label}</div></div>`).join('');
+  const list = document.getElementById('history-list');
+  if(!history.length){ list.innerHTML = `<div class="empty-state">No sessions logged yet. Finish a workout and it'll show up here.</div>`; }
+  else {
+    list.innerHTML = history.slice().reverse().slice(0,20).map(h=>{
+      const d = new Date(h.date);
+      const dateStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+      return `<div class="history-row"><div class="htop"><span>${h.label}</span><span>${dateStr}</span></div>
+        <div class="hsub">${h.rounds} rounds · ${Math.round(h.totalSec/60)} min · ~${h.punches} punches${h.feel?' · '+h.feel:''}</div></div>`;
+    }).join('');
+  }
+}
+
+/* ================= VOICE OUTPUT ================= */
+/* ─ Stance mirroring ─ */
+function mirrorForSouthpaw(text){
+  if(!currentStance || currentStance !== 'southpaw') return text;
+  return text.replace(/\blead\b/gi,'__L__').replace(/\brear\b/gi,'lead').replace(/__L__/g,'rear')
+             .replace(/\bleft\b/gi,'__LF__').replace(/\bright\b/gi,'left').replace(/__LF__/g,'right');
+}
+
+/* ─ Speech with optional callback (needed for the silent-round fix) ─ */
+function speak(text, onDone){
+  if(!('speechSynthesis' in window)){ if(onDone) setTimeout(onDone,200); return; }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = speechRate; u.pitch = 1; u.volume = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const v = voices.find(v=>v.voiceURI===selectedVoiceURI);
+  if(v) u.voice = v;
+  state.speechCancelled = false;
+  if(onDone){ u.onend = ()=>{ if(!state.speechCancelled) onDone(); }; }
+  window.speechSynthesis.speak(u);
+}
+
+/* ─ Estimate how long speech will take at current rate (ms) ─ */
+function estimateSpeechMs(text, rate){
+  return Math.ceil((text.trim().split(/\s+/).length / (rate * 2.5)) * 1000) + 1100;
+}
+
+/* ─ Compute how long to wait AFTER speech before the next callout ─
+   Replaces the old next-call interval with a speech-end-driven approach.
+   gap = (punch execution time) + (recovery/breathing gap from pace band) */
+function computeGapAfterSpeech(nums, r){
+  if(r.paceOverrideSec) return r.paceOverrideSec;
+  const s = nums.toLowerCase();
+  const punches = (nums.match(/[1-6]/g)||[]).length || 1;
+  const hasMove = /\bstep\b|\bpivot\b|angle|circle|lateral/.test(s);
+  const hasDef  = /slip|roll|parry|duck|pull back|block/.test(s);
+  const hasFeint= /feint/.test(s);
+  const execTime = punches*0.55 + (hasMove?1.0:0) + (hasDef?0.8:0) + (hasFeint?0.5:0);
+  const pace = ROUND_TYPES[r.type]?.pace || 'normal';
+  const band = PACE_GAP[pace];
+  const mult = r.paceMult || 1;
+  const mn = band.min*mult, mx = band.max*mult;
+  const recoveryGap = mx - (mx-mn)*(r.intensity/100);
+  return Math.max(1.5, execTime + recoveryGap);
+}
+
+/* ─ SILENT-ROUND FIX: speak combo then schedule the gap via onend callback.
+   If onend is dropped (documented iOS/Chrome flake), a fallback timer fires
+   so the round NEVER goes silent. ─ */
+function speakComboAndSchedule(combo, r){
+  const gapSec = computeGapAfterSpeech(combo.nums, r);
+  const chunkUrls = resolveComboChunks(combo.nums);
+  if(chunkUrls){
+    state.nextCallIn = 999; // sentinel — real value set in callback below
+    playBufferSequence(chunkUrls, ()=>{
+      if(state.phase!=='work' || state.paused) return;
+      state.nextCallIn = Math.max(1, Math.round(gapSec));
+    });
+    return;
+  }
+  // Fallback: no generated clip for one of this combo's tokens (e.g. a
+  // custom user-added combo) — same browser-TTS path as before.
+  const rawText = combo.nums.replace(/-/g,', ');
+  const text = mirrorForSouthpaw(rawText);
+  let fallbackTimer = setTimeout(()=>{
+    if(state.nextCallIn >= 999 && state.phase==='work' && !state.paused)
+      state.nextCallIn = Math.max(1, Math.round(gapSec));
+  }, estimateSpeechMs(text, speechRate));
+  speak(text, ()=>{
+    clearTimeout(fallbackTimer); fallbackTimer = null;
+    if(state.phase!=='work' || state.paused || state.speechCancelled) return;
+    state.nextCallIn = Math.max(1, Math.round(gapSec));
+  });
+  state.nextCallIn = 999; // sentinel — real value set in callback above
+}
+
+function speakCombo(c){
+  const chunkUrls = resolveComboChunks(c.nums);
+  if(chunkUrls){ playBufferSequence(chunkUrls); return; }
+  speak(mirrorForSouthpaw(c.nums.replace(/-/g,', ')));
+}
+function speakCurrentCombo(){ if(state.phase==='work' && state.currentCombo) speakComboAndSchedule(state.currentCombo, currentRound()); }
+
+/* ================= AUDIO TONES ================= */
+let actx = null;
+let keepAliveOsc = null, keepAliveGain = null;
+let wakeLock = null;
+function getCtx(){ if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)(); return actx; }
+/* iOS Safari mutes any audio that wasn't triggered directly inside a tap handler — a setInterval
+   callback later doesn't count, even from the same context. This unlocks the AudioContext at the
+   moment Start is actually tapped, so the timer-driven dings/bells later are allowed to play. */
+function unlockAudio(){
+  try{
+    const ctx = getCtx();
+    if(ctx.state === 'suspended') ctx.resume();
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    gain.gain.value = 0.0001;
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(); osc.stop(ctx.currentTime+0.01);
+  }catch(e){}
+}
+/* iOS will quietly re-suspend the audio context after a few seconds of silence, which is exactly
+   what a rest period is — so the bell at the end of it can silently fail. Running one continuous,
+   essentially inaudible tone for the whole session keeps the context alive throughout. */
+function startKeepAlive(){
+  try{
+    const ctx = getCtx();
+    keepAliveOsc = ctx.createOscillator();
+    keepAliveGain = ctx.createGain();
+    keepAliveOsc.frequency.value = 30;
+    keepAliveGain.gain.value = 0.0006;
+    keepAliveOsc.connect(keepAliveGain); keepAliveGain.connect(ctx.destination);
+    keepAliveOsc.start();
+  }catch(e){}
+}
+function stopKeepAlive(){
+  try{ if(keepAliveOsc){ keepAliveOsc.stop(); keepAliveOsc.disconnect(); keepAliveOsc=null; } }catch(e){}
+}
+async function requestWakeLock(){
+  try{ if('wakeLock' in navigator){ wakeLock = await navigator.wakeLock.request('screen'); } }catch(e){}
+}
+function releaseWakeLock(){
+  try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){}
+}
+document.addEventListener('visibilitychange', async ()=>{
+  if(wakeLock!==null && document.visibilityState==='visible'){
+    try{ wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+  }
+  if(actx && actx.state==='suspended' && document.visibilityState==='visible'){
+    try{ actx.resume(); }catch(e){}
+  }
+});
+function playTone(freq, dur, type, vol){
+  try{
+    const ctx = getCtx();
+    if(ctx.state === 'suspended') ctx.resume();
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    osc.type = type||'sine'; osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol||0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+dur);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(); osc.stop(ctx.currentTime+dur);
+  }catch(e){}
+}
+function buzz(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} }
+function playBell(){ playTone(880,0.9,'triangle',0.4); setTimeout(()=>playTone(660,0.9,'triangle',0.3),80); buzz([110,60,110]); }
+function playWarningBeep(){ playTone(1000,0.2,'sine',0.22); }
+function playRestTone(){ playTone(523,0.6,'triangle',0.22); buzz(70); }
+function playCountTick(n){
+  const freqs = {3:650, 2:780, 1:920};
+  playTone(freqs[n]||700, 0.12, 'square', 0.18);
+  buzz(28);
+}
+
+/* ================= COMBO PICKING ================= */
+/* ─ ANTI-REPEAT + FREQ WEIGHTED COMBO PICKING ─ */
+function getComboCategories(n){
+  const s = n.toLowerCase(); const cats = [];
+  if(/feint/.test(s)) cats.push('feint');
+  if(/\bstep\b|\bpivot\b|angle\s*(out|in|step)?|circle|lateral/.test(s)) cats.push('footwork');
+  if(/slip|\broll\b|parry|\bduck\b|pull back|\bblock\b/.test(s)) cats.push('defense');
+  return cats;
+}
+function getFreqMult(freq){ return freq==='high'?3:freq==='low'?0.35:1; }
+function pickComboFromPool(pool){
+  const CWEIGHTS = {1:6, 2:4, 3:2};
+  function complexity(n){
+    const s=n.toLowerCase();
+    const d=/slip|\broll\b|parry|\bduck\b|pull back|\bblock\b/.test(s);
+    const fw=/\bstep\b|\bpivot\b|angle|circle/.test(s);
+    const fe=/feint/.test(s);
+    const p=(n.match(/[1-6]/g)||[]).length;
+    if(d&&(fw||p>=4)) return 3;
+    if(d||fe||(fw&&p>=3)) return 2;
+    return 1;
+  }
+  const r = state._pickRound || {};
+  const caps = ROUND_CATEGORY_CAPS[r.type] || ROUND_CATEGORY_CAPS.default;
+  const recent = (state.recentCombos||[]).slice(-2);
+  const used = state.usedCombosThisSession || new Set();
+  const catCount = state.roundCategoryCount || {};
+  const weighted = pool.map(c=>({...c, _w: CWEIGHTS[complexity(c.n)] * getFreqMult(c.freq||'normal') * (favCombos.has(c.n)?2:1)}));
+  for(let attempt=0; attempt<12; attempt++){
+    const total = weighted.reduce((a,c)=>a+c._w, 0);
+    let rnd = Math.random()*total; let cand = weighted[weighted.length-1];
+    for(const c of weighted){ rnd-=c._w; if(rnd<=0){cand=c;break;} }
+    if(recent.includes(cand.n)) continue;
+    if(used.has(cand.n) && pool.length > 5) continue;
+    const cats = getComboCategories(cand.n);
+    if(cats.some(cat=>(catCount[cat]||0) >= (caps[cat]??999))) continue;
+    return {nums:cand.n, name:cand.name, categories:cats};
+  }
+  const fb = pool.filter(c=>complexity(c.n)===1 && c.freq!=='low');
+  const pick = fb.length ? fb[Math.floor(Math.random()*fb.length)] : pool[Math.floor(Math.random()*pool.length)];
+  return {nums:pick.n, name:pick.name, categories:getComboCategories(pick.n)};
+}
+function trackCombo(combo){
+  if(!state.recentCombos) state.recentCombos=[];
+  state.recentCombos.push(combo.nums);
+  if(state.recentCombos.length>3) state.recentCombos.shift();
+  if(!state.usedCombosThisSession) state.usedCombosThisSession=new Set();
+  state.usedCombosThisSession.add(combo.nums);
+  if(!state.roundCategoryCount) state.roundCategoryCount={};
+  (combo.categories||[]).forEach(cat=>{ state.roundCategoryCount[cat]=(state.roundCategoryCount[cat]||0)+1; });
+}
+function getPoolForRound(level, typeKey){
+  const full = poolFor(level);
+  const filtered = full.filter(ROUND_TYPES[typeKey].filter);
+  return filtered.length ? filtered : full;
+}
+function findComboMeta(level, nums){ return poolFor(level).find(c=>c.n===nums); }
+function intensityToFreq(intensity){ return Math.max(4, Math.min(14, Math.round(14 - intensity/10))); }
+/* Real gap between callouts = time to physically throw THIS combo + a breathing/reset gap that
+   shrinks as intensity rises. A 2-punch combo and a 7-punch combo at the same intensity do NOT
+   get the same gap — the 7-punch one earns more time, proportional to its length. */
+function countPunches(nums){
+  const m = nums.match(/[1-6]/g);
+  return m ? m.length : 1;
+}
+function intervalForCombo(nums, intensity, pace, paceMult, overrideSec){
+  if(overrideSec) return overrideSec;
+  paceMult = paceMult || 1;
+  const punches = countPunches(nums);
+  const throwTime = punches * 0.5;
+  const band = PACE_GAP[pace] || PACE_GAP.normal;
+  const min = band.min * paceMult, max = band.max * paceMult;
+  const restGap = max - (max-min) * (intensity/100);
+  return Math.max(1.8, throwTime + restGap);
+}
+
+/* ================= PLAN BUILDERS ================= */
+function buildPlanFromTemplate(tpl, level){
+  const typeCount = {};
+  return tpl.seq.map(r => {
+    typeCount[r.type] = (typeCount[r.type]||0)+1;
+    return { type:r.type, work:r.work, rest:r.rest, intensity:r.intensity,
+             objectiveText: getVariantObj(r.type, typeCount[r.type]-1),
+             pool:getPoolForRound(level,r.type), level };
+  });
+}
+function buildPlanFromCustom(){
+  const typeKey = settings.focus==='all' ? 'flow' : settings.focus;
+  const pool = getPoolForRound(settings.level, typeKey);
+  const plan = [];
+  for(let i=0;i<settings.rounds;i++) plan.push({ type:typeKey, work:settings.roundSec, rest:settings.restSec, intensity:settings.intensity, objectiveText:getVariantObj(typeKey,i), pool, level:settings.level });
+  return plan;
+}
+function startCustom(){
+  state = { plan: buildPlanFromCustom(), roundIndex:0, phase:'work', paused:false, currentCombo:null, label:'Custom Session', callCountInRound:0 };
+  launchPlan();
+}
+function saveCustomAsSession(){
+  const typeKey = settings.focus==='all' ? 'flow' : settings.focus;
+  const seq = [];
+  for(let i=0;i<settings.rounds;i++) seq.push({ type:typeKey, work:settings.roundSec, rest:settings.restSec, intensity:settings.intensity });
+  promptSaveSession(seq, []);
+}
+
+/* ================= SMART BUILDER ================= */
+function buildSmartSession(){
+  const text = document.getElementById('smart-input').value.toLowerCase();
+  if(!text.trim()){ alert('Tell me a bit about what you need first.'); return; }
+  let minutesMatch = text.match(/(\d+)\s*(min|minute)/);
+  let targetMin = minutesMatch ? parseInt(minutesMatch[1]) : (smartDur || 30);
+  const isSore = /sore|light|easy|recover/.test(text);
+  const isTechnical = /technical|technique|slow it down/.test(text);
+  const isConditioning = /gas|condition|endur|tired|fatigue|stamina|cardio/.test(text);
+  const wantsJab = /jab/.test(text);
+  const wantsBody = /body/.test(text);
+  const wantsSouthpaw = /southpaw/.test(text);
+  const wantsDefense = /defen[cs]e|head movement|slip|counter/.test(text);
+  const wantsCounter = /counter/.test(text);
+  const wantsSpeed = /speed|fast hands|quick/.test(text);
+  const wantsPower = /power|hard|hit harder/.test(text);
+  const wantsPressure = /pressure|walk.*down|aggress/.test(text);
+  const fightCamp = /fight in|fight camp|upcoming fight|fight soon/.test(text);
+  const recent = history.slice(-3);
+  const recentEndurance = recent.filter(h=>h.feel==='endurance').length >= 2;
+  const recentTechnique = recent.filter(h=>h.feel==='technique').length >= 2;
+  const baseWork = isSore||isTechnical ? 120 : 150;
+  // conflict resolution: sore+cardio = light conditioning (short rests, moderate intensity)
+  const lightConditioning = isSore && isConditioning;
+  const baseRest = lightConditioning ? 25 : (isSore||isTechnical ? 60 : (isConditioning ? 25 : 45));
+  let baseIntensity = isSore ? 45 : (lightConditioning ? 55 : (isConditioning||fightCamp ? 80 : 65));
+  // Progressive overload: 3 straight completed + sharp sessions earns a harder session
+  const overload = recent.length>=3 && recent.every(x=>x.complete==='yes' && x.feel==='sharp');
+  if(overload && !isSore) baseIntensity = Math.min(90, baseIntensity+6);
+  // Read hardest round position from last 5 sessions to place conditioning block there
+  const hardPositions = history.slice(-5).map(h=>parseInt(h.hardest)).filter(n=>!isNaN(n));
+  const avgHardest = hardPositions.length ? Math.round(hardPositions.reduce((a,b)=>a+b,0)/hardPositions.length) : null;
+  let seqTypes = ['warmup'];
+  if(wantsJab) seqTypes.push('jab','jab');
+  if(wantsPower) seqTypes.push('power');
+  if(wantsBody) seqTypes.push('body');
+  if(wantsSouthpaw) seqTypes.push('southpaw');
+  if(wantsDefense||wantsCounter) seqTypes.push(wantsCounter?'counter':'defense');
+  if(wantsPressure) seqTypes.push('pressure');
+  if(wantsSpeed) seqTypes.push('speed');
+  if(isConditioning||recentEndurance) seqTypes.push('conditioning','speed');
+  if(recentTechnique && !isConditioning) seqTypes.push('technical');
+  if(isTechnical) seqTypes.push('technical','jab');
+  if(seqTypes.length===1) seqTypes.push('jab','power','flow');
+  // Insert conditioning at historically hardest position
+  if(avgHardest && avgHardest <= seqTypes.length && seqTypes[avgHardest-1] !== 'warmup' && seqTypes[avgHardest-1] !== 'finisher'){
+    seqTypes.splice(avgHardest-1, 1, 'conditioning');
+  }
+  seqTypes.push('finisher');
+  const avgCycle = baseWork+baseRest;
+  let neededRounds = Math.max(3, Math.round((targetMin*60)/avgCycle));
+  while(seqTypes.length < neededRounds) seqTypes.splice(seqTypes.length-1,0,'flow');
+  while(seqTypes.length > neededRounds && seqTypes.length>3) seqTypes.splice(1,1);
+  // Auto cool-down before the finisher on longer sessions
+  if(targetMin>=25) seqTypes.splice(seqTypes.length-1, 0, '__cool');
+  const plan = seqTypes.map(type=>{
+    const isCool = type==='__cool';
+    const t = isCool ? 'technical' : type;
+    let intensity = baseIntensity;
+    if(t==='warmup') intensity = Math.max(35,baseIntensity-25);
+    if(t==='finisher') intensity = 100;
+    if(t==='conditioning') intensity = Math.min(100, baseIntensity+15);
+    if(isTechnical) intensity = Math.min(intensity, 60);
+    if(lightConditioning) intensity = Math.min(intensity, 65);
+    if(isCool) intensity = 40;
+    return { type:t,
+      work: t==='warmup'||isCool ? Math.round(baseWork*0.8) : baseWork,
+      rest: t==='finisher' ? 0 : (isCool ? 30 : baseRest),
+      intensity,
+      objectiveText: isCool ? 'Cool-down. Half speed, light hands, deep breaths.' : getVariantObj(t, 0) };
+  });
+  document.getElementById('smart-preview').innerHTML = '';
+  const descNote = overload ? ' Progressive overload applied — you earned a harder one after three sharp sessions.' : '';
+  openSessionDetail({ name:'Smart Session', desc:'Built from your description — pick a difficulty and adjust anything below before you start.'+descNote, seq:plan, goals:[] });
+}
+
+/* ================= THEME ================= */
+function initTheme(){
+  if(localStorage.getItem('corner_theme')==='light') document.body.classList.add('light');
+}
+function toggleTheme(){
+  document.body.classList.toggle('light');
+  localStorage.setItem('corner_theme', document.body.classList.contains('light')?'light':'dark');
+}
+
+/* ================= PROFILE ================= */
+function loadProfileUI(){
+  const n=document.getElementById('pf-name'), s=document.getElementById('pf-skill'), g=document.getElementById('pf-goal');
+  if(n){ n.value=profile.name||''; s.value=profile.skill||'beginner'; g.value=profile.goal||'fitness'; }
+  applyProfileGreeting();
+}
+function saveProfile(){
+  profile = {
+    name: document.getElementById('pf-name').value.trim(),
+    skill: document.getElementById('pf-skill').value,
+    goal: document.getElementById('pf-goal').value
+  };
+  localStorage.setItem('corner_profile2', JSON.stringify(profile));
+  applyProfileGreeting();
+}
+function applyProfileGreeting(){
+  const g=document.querySelector('.greeting');
+  if(g && profile.name) g.innerHTML = `${profile.name.split(' ')[0]}, let's <span>train</span>.`;
+}
+
+/* ================= SETTINGS / PROFILE OVERLAYS ================= */
+function openSettings(){ document.getElementById('settings-overlay').classList.add('show'); }
+function closeSettings(){ document.getElementById('settings-overlay').classList.remove('show'); }
+function openProfile(){ renderProfileOverlayStats(); document.getElementById('profile-overlay').classList.add('show'); }
+function closeProfile(){ document.getElementById('profile-overlay').classList.remove('show'); }
+function renderProfileOverlayStats(){
+  const s = computeStats();
+  const se=document.getElementById('profile-sessions'), st=document.getElementById('profile-streak');
+  if(se){ se.textContent = s.sessions; st.textContent = s.streak; }
+}
+
+/* ================= IndexedDB (durable session store) ================= */
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    try{
+      const q=indexedDB.open('corner',1);
+      q.onupgradeneeded=e=>{ e.target.result.createObjectStore('sessions',{keyPath:'date'}); };
+      q.onsuccess=e=>res(e.target.result);
+      q.onerror=()=>rej();
+    }catch(e){ rej(); }
+  });
+}
+async function idbSave(rec){
+  try{ const db=await idbOpen(); db.transaction('sessions','readwrite').objectStore('sessions').put(rec); }catch(e){}
+}
+async function idbRestore(){
+  // If localStorage got wiped (iOS eviction) but IDB survived, restore history from it
+  try{
+    if(history.length) return;
+    const db=await idbOpen();
+    const all=await new Promise((res,rej)=>{ const q=db.transaction('sessions').objectStore('sessions').getAll(); q.onsuccess=()=>res(q.result||[]); q.onerror=()=>rej(); });
+    if(all.length){ history=all.sort((a,b)=>a.date.localeCompare(b.date)); saveHistory(history); renderHomeStats(); renderChallenge(); }
+  }catch(e){}
+}
+
+/* ================= RESUME (interrupted session) ================= */
+function saveSnapshot(){
+  try{
+    const snap={ ts:Date.now(), label:state.label, roundIndex:state.roundIndex,
+      used:[...(state.usedCombosThisSession||[])],
+      plan: state.plan.map(({pool, ...rest})=>rest) };
+    localStorage.setItem('corner_snapshot', JSON.stringify(snap));
+  }catch(e){}
+}
+function clearSnapshot(){ localStorage.removeItem('corner_snapshot'); }
+function discardSnapshot(){ clearSnapshot(); document.getElementById('resume-banner').classList.remove('show'); }
+function checkSnapshot(){
+  try{
+    const snap=JSON.parse(localStorage.getItem('corner_snapshot')||'null');
+    if(!snap) return;
+    if(Date.now()-snap.ts > 2*3600*1000){ clearSnapshot(); return; }
+    const b=document.getElementById('resume-banner');
+    document.getElementById('resume-sub').textContent = `${snap.label} — round ${snap.roundIndex+1} of ${snap.plan.length}`;
+    b.classList.add('show');
+  }catch(e){ clearSnapshot(); }
+}
+function resumeSession(){
+  const snap=JSON.parse(localStorage.getItem('corner_snapshot')||'null');
+  if(!snap) return;
+  document.getElementById('resume-banner').classList.remove('show');
+  state = {
+    plan: snap.plan.map(r=>({...r, pool:getPoolForRound(r.level||'beginner', r.type)})),
+    roundIndex: snap.roundIndex, phase:'work', paused:false, currentCombo:null,
+    label: snap.label, callCountInRound:0,
+    usedCombosThisSession:new Set(snap.used||[]), recentCombos:[], roundCategoryCount:{}
+  };
+  unlockAudio(); startKeepAlive(); requestWakeLock();
+  document.getElementById('round-total').textContent = state.plan.length;
+  buildDots(state.plan.length);
+  switchView('view-workout');
+  updateDots();
+  const r=currentRound();
+  document.getElementById('round-current').textContent = state.roundIndex+1;
+  document.getElementById('round-type-tag').textContent = ROUND_TYPES[r.type].label.toUpperCase();
+  document.getElementById('round-objective').textContent = r.objectiveText || ROUND_TYPES[r.type].objective;
+  speakGeneratedOrFallback('Resuming. Round '+(state.roundIndex+1)+'.');
+  beginPhase('work');
+}
+
+/* ================= FOCUS MODE ================= */
+function toggleFocus(){
+  const v=document.getElementById('view-workout');
+  const on=v.classList.toggle('focus');
+  document.getElementById('focus-btn').textContent = on?'🗗':'⛶';
+  try{ if(on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); else if(!on && document.exitFullscreen) document.exitFullscreen(); }catch(e){}
+}
+function exitFocus(){
+  const v=document.getElementById('view-workout');
+  if(v) v.classList.remove('focus');
+  const fb=document.getElementById('focus-btn'); if(fb) fb.textContent='⛶';
+  try{ if(document.fullscreenElement && document.exitFullscreen) document.exitFullscreen(); }catch(e){}
+}
+
+function setSmartDur(min, el){
+  smartDur = min;
+  document.querySelectorAll('#smart-dur-row .pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* ================= SESSION FLOW (with pre-round countdown) ================= */
+function launchPlan(){
+  unlockAudio();
+  startKeepAlive();
+  requestWakeLock();
+  state.usedCombosThisSession = new Set(); // session-level combo tracking
+  state.recentCombos = [];
+  state.roundCategoryCount = {};
+  document.getElementById('round-total').textContent = state.plan.length;
+  buildDots(state.plan.length);
+  switchView('view-workout');
+  updateDots();
+  beginPreRoll();
+}
+function buildDots(n){
+  const dots = document.getElementById('dots'); dots.innerHTML='';
+  for(let i=1;i<=n;i++){ const d=document.createElement('div'); d.className='dot'; d.id='dot-'+i; dots.appendChild(d); }
+}
+function updateDots(){
+  const n = state.plan.length;
+  for(let i=1;i<=n;i++){
+    const d = document.getElementById('dot-'+i);
+    d.className = 'dot' + (i-1<state.roundIndex?' done':i-1===state.roundIndex?' current':'');
+  }
+}
+function currentRound(){ return state.plan[state.roundIndex]; }
+
+/* Short lead-in before round 1 only — every round after this gets its countdown
+   for free from the tail end of its preceding rest period, no separate screen needed. */
+function beginPreRoll(){
+  state.phase = 'preroll';
+  state.timeLeft = 6;
+  const r = currentRound();
+  document.getElementById('round-current').textContent = 1;
+  document.getElementById('round-type-tag').textContent = ROUND_TYPES[r.type].label.toUpperCase();
+  document.getElementById('round-objective').textContent = r.objectiveText || ROUND_TYPES[r.type].objective;
+  document.getElementById('intensity-fill').style.width = r.intensity+'%';
+  document.getElementById('phase-label').textContent = 'GET READY';
+  document.getElementById('phase-label').className = 'phase-label countdown';
+  document.getElementById('combo-card').className = 'combo-card';
+  document.getElementById('combo-nums').textContent = "ROUND 1";
+  document.getElementById('combo-name').textContent = ROUND_TYPES[r.type].label;
+  updateTimerDisplay();
+  // Say "Round 1." fully, THEN the phrase fully, and only once both have
+  // finished does the countdown timer actually start ticking -- previously
+  // this was one combined utterance racing a timer that was already
+  // running, which is what caused the announcement to get cut off or
+  // jumbled with the "5... 4..." ticks.
+  const stillInPreroll = ()=> state.phase==='preroll' && document.getElementById('view-workout').classList.contains('active');
+  speakGeneratedOrFallback("Round 1.", ()=>{
+    if(!stillInPreroll()) return; // session ended while "Round 1." was still playing
+    speakGeneratedOrFallback(r.objectiveText || ROUND_TYPES[r.type].objective, ()=>{
+      if(!stillInPreroll()) return; // session ended while the phrase was still playing
+      if(timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(tick, 1000);
+    });
+  });
+}
+
+function nextComboForRound(r){
+  state._pickRound = r; // pass round context to pickComboFromPool
+  const combo = pickComboFromPool(r.pool);
+  trackCombo(combo);
+  return combo;
+}
+
+function beginPhase(phase){
+  state.phase = phase;
+  const r = currentRound();
+  state.timeLeft = phase==='work' ? r.work : r.rest;
+  document.getElementById('intensity-fill').style.width = (phase==='work'?r.intensity:25)+'%';
+  const label = document.getElementById('phase-label');
+  const timerEl = document.getElementById('timer');
+  const card = document.getElementById('combo-card');
+
+  if(phase==='work'){
+    label.textContent='WORK'; label.className='phase-label work'; timerEl.className='timer'; card.className='combo-card';
+    // reset per-round anti-repeat tracking
+    state.recentCombos = []; state.roundCategoryCount = {};
+    state.callCountInRound = 0;
+    state.saidMotiv = false;
+    saveSnapshot();
+    state.currentCombo = nextComboForRound(r);
+    showCombo(state.currentCombo);
+    speakComboAndSchedule(state.currentCombo, r);
+    state.callCountInRound++;
+  } else {
+    label.textContent='REST'; label.className='phase-label rest'; timerEl.className='timer rest'; card.className='combo-card';
+    showCombo({nums:'REST', name:'Breathe. Shake it out.'});
+    speakGeneratedOrFallback('Rest.');
+    playRestTone();
+  }
+  updateTimerDisplay();
+  if(timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(tick, 1000);
+}
+
+function showCombo(c){
+  document.getElementById('combo-nums').textContent = c.nums;
+  document.getElementById('combo-name').textContent = c.name;
+}
+function updateTimerDisplay(){
+  if(state.phase==='preroll' || (state.phase==='rest' && state.timeLeft<=10)){
+    document.getElementById('timer').className = 'timer countdown';
+    document.getElementById('timer').textContent = state.timeLeft;
+    if(state.phase==='rest') document.getElementById('phase-label').textContent = 'GET READY';
+  } else {
+    document.getElementById('timer').className = state.phase==='rest' ? 'timer rest' : 'timer';
+    const m=Math.floor(state.timeLeft/60), s=state.timeLeft%60;
+    document.getElementById('timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  }
+}
+/* Exact countdown spec for the closing 10 seconds of ANY phase (work ending, rest ending, pre-roll):
+   10 -> spoken. 9,8,7,6 -> silent. 5,4 -> spoken. 3,2,1 -> spoken WITH a ding. 0 -> bell (handled at transition). */
+function countdownAudio(t){
+  if(t===10){ playChunkNumberOrSpeak(10, '10'); return; }
+  if(t>=6) return; // silent zone
+  if(t===5 || t===4){ playChunkNumberOrSpeak(t, String(t)); return; }
+  if(t===3 || t===2 || t===1){ playChunkNumberOrSpeak(t, String(t)); playCountTick(t); return; }
+}
+function tick(){
+  if(state.paused) return;
+  state.timeLeft--;
+
+  /* Heads-up for the round coming out of this rest: only if there's enough
+     runway to say it and be done well before the numeric countdown at 10 —
+     phrase at 20s left, "Round N." at 15s left. Rest periods under 20s just
+     get the plain countdown from 10, same as always. */
+  if(state.phase==='rest'){
+    const finishedRound = currentRound();
+    const nextRound = state.plan[state.roundIndex+1];
+    if(nextRound && finishedRound.rest>=20){
+      if(state.timeLeft===20){
+        speakGeneratedOrFallback(nextRound.objectiveText || ROUND_TYPES[nextRound.type].objective);
+      } else if(state.timeLeft===15){
+        speakGeneratedOrFallback('Round '+(state.roundIndex+2)+'.');
+      }
+    }
+  }
+
+  if((state.phase==='rest' || state.phase==='preroll') && state.timeLeft>=1 && state.timeLeft<=10) countdownAudio(state.timeLeft);
+
+  if(state.timeLeft<=0){
+    if(state.phase==='preroll'){ playBell(); beginPhase('work'); return; }
+    nextPhase(); return;
+  }
+  updateTimerDisplay();
+
+  if(state.phase==='work'){
+    const cr = currentRound();
+    if(!state.saidMotiv && cr.work>=90 && state.timeLeft===Math.floor(cr.work/2) && state.nextCallIn>3 && state.nextCallIn<999){
+      state.saidMotiv = true;
+      const lines = COACH_LINES[coachStyle] || COACH_LINES.balanced;
+      speakGeneratedOrFallback(lines[Math.floor(Math.random()*lines.length)]);
+    }
+    if(state.nextCallIn < 999) state.nextCallIn -= 1;
+    if(state.nextCallIn<=0 && state.timeLeft>3){
+      const r = currentRound();
+      state.currentCombo = nextComboForRound(r);
+      showCombo(state.currentCombo);
+      speakComboAndSchedule(state.currentCombo, r);
+      state.callCountInRound++;
+    }
+  }
+}
+function nextPhase(){
+  const r = currentRound();
+  playBell();   // same loud bell whether a round just ended or rest just ended and the next round is starting
+  if(state.phase==='work'){
+    if(r.rest>0){ beginPhase('rest'); }
+    else { advanceToNextRound(); }
+  } else {
+    advanceToNextRound();
+  }
+}
+function advanceToNextRound(){
+  if(state.roundIndex >= state.plan.length-1){ finishWorkout(); return; }
+  state.roundIndex++;
+  updateDots();
+  const r = currentRound();
+  document.getElementById('round-current').textContent = state.roundIndex+1;
+  document.getElementById('round-type-tag').textContent = ROUND_TYPES[r.type].label.toUpperCase();
+  document.getElementById('round-objective').textContent = r.objectiveText || ROUND_TYPES[r.type].objective;
+  beginPhase('work');
+}
+function togglePause(){
+  state.paused = !state.paused;
+  document.getElementById('pause-btn').textContent = state.paused?'RESUME':'PAUSE';
+  if(state.paused){
+    state.speechCancelled = true;
+    window.speechSynthesis.cancel();
+    stopChunkPlayback();
+    state.nextCallIn = 999; // hold until resume
+  } else if(state.phase==='work' && state.currentCombo){
+    speakComboAndSchedule(state.currentCombo, currentRound());
+  }
+}
+function finishWorkout(){
+  clearInterval(timerInterval);
+  stopKeepAlive(); releaseWakeLock();
+  clearSnapshot(); exitFocus();
+  buzz([180,70,180]);
+  speakGeneratedOrFallback("Session complete. Good work.");
+  goToSurvey();
+}
+function endWorkout(){
+  state._wasPaused = state.paused;
+  state.paused = true;
+  document.getElementById('end-confirm-overlay').style.display = 'flex';
+}
+function cancelEndWorkout(){
+  document.getElementById('end-confirm-overlay').style.display = 'none';
+  state.paused = state._wasPaused || false;
+  document.getElementById('pause-btn').textContent = state.paused ? 'RESUME' : 'PAUSE';
+}
+function confirmEndWorkout(){
+  document.getElementById('end-confirm-overlay').style.display = 'none';
+  clearInterval(timerInterval);
+  stopKeepAlive(); releaseWakeLock();
+  clearSnapshot(); exitFocus();
+  state.speechCancelled = true;
+  window.speechSynthesis.cancel();
+  stopChunkPlayback();
+  goToSurvey(true);
+}
+
+/* ================= SURVEY ================= */
+function goToSurvey(early){
+  state.endedEarly = !!early;
+  surveyAnswers = { hardest:null, complete: early?'no':null, feel:null };
+  const roundsEl = document.getElementById('survey-rounds');
+  roundsEl.innerHTML = state.plan.map((r,i)=>`<div class="opt" data-val="${i+1}" onclick="selectOpt(this,'hardest')">R${i+1}</div>`).join('');
+  document.querySelectorAll('#survey-complete .opt').forEach(o=>o.classList.toggle('sel', o.dataset.val===(early?'no':'')));
+  document.querySelectorAll('#survey-feel .opt').forEach(o=>o.classList.remove('sel'));
+  switchView('view-survey');
+}
+function selectOpt(el, group){
+  const parent = el.parentElement;
+  parent.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');
+  surveyAnswers[group] = el.dataset.val;
+}
+function submitSurvey(){
+  const roundsCompleted = state.endedEarly ? state.roundIndex : state.plan.length;
+  const totalSec = state.plan.slice(0, roundsCompleted).reduce((a,r)=>a+r.work+r.rest,0);
+  const workSec = state.plan.slice(0, roundsCompleted).reduce((a,r)=>a+r.work,0);
+  const punches = Math.round((workSec/60) * 65);
+  const rec = { date:new Date().toISOString(), label:state.label, rounds:roundsCompleted, totalSec, punches, hardest:surveyAnswers.hardest, complete:surveyAnswers.complete, feel:surveyAnswers.feel };
+  history.push(rec);
+  saveHistory(history);
+  idbSave(rec);
+  clearSnapshot();
+  renderChallenge();
+  document.getElementById('done-summary').textContent = `${state.label} · ${roundsCompleted} rounds · ~${Math.round(totalSec/60)} min · ~${punches} punches`;
+  switchView('view-done');
+}
+function resetToSetup(){ switchView('view-home'); renderHomeStats(); }
+function switchView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('bottomnav').style.display = (id==='view-home') ? 'flex' : 'none';
+}
+
+
+/* ─ Onboarding ─ */
+function showOnboarding(){ document.getElementById('onboarding').classList.add('show'); }
+function closeOnboarding(){ document.getElementById('onboarding').classList.remove('show'); localStorage.setItem('corner_seen_intro','1'); }
+function showRef(){ document.getElementById('ref-overlay').classList.add('show'); }
+function closeRef(){ document.getElementById('ref-overlay').classList.remove('show'); }
+
+/* ─ Library Reference Tab ─ */
+function setLibTab(tab){
+  document.getElementById('lt-combos').classList.toggle('active', tab==='combos');
+  document.getElementById('lt-ref').classList.toggle('active', tab==='ref');
+  document.getElementById('lib-combos-panel').style.display = tab==='combos'?'':'none';
+  document.getElementById('lib-ref-panel').style.display = tab==='ref'?'':'none';
+  if(tab==='ref') buildLibRef();
+}
+/* ================= ANIMATED MOVEMENT DEMOS =================
+   Every punch / defense / footwork / feint is a stick figure that
+   physically performs the movement when tapped. Pure SVG + CSS,
+   zero network, zero video bytes. */
+const DEMO = (function(){
+  var C={b:'#8a93a8',a:'#4f8ef7',t:'#e5484d',gold:'#f3c94f',fl:'#3a4258'};
+  function ln(x1,y1,x2,y2,col,w,extra){ return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+col+'" stroke-width="'+(w||1.8)+'" stroke-linecap="round" '+(extra||'')+'/>'; }
+  function cir(cx,cy,r,fill,extra){ return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+fill+'" '+(extra||'')+'/>'; }
+  var floor = ln(14,88,106,88,C.fl,1);
+  var feet  = ln(30,88,50,88,C.b,1.8) + ln(44,88,60,88,C.b,1.8,'opacity=".4"');
+  var legs  = ln(48,68,47,88,C.b) + ln(34,68,33,88,C.b);
+  var hips  = ln(34,68,48,68,C.b);
+  var torso = ln(41,68,40,48,C.b);
+  function head(x,y){ return '<circle cx="'+(x||40)+'" cy="'+(y||40)+'" r="8" fill="none" stroke="'+C.b+'" stroke-width="1.8"/>'; }
+  var guardR = ln(48,56,54,50,C.b) + cir(57,48,3.5,C.b,'opacity=".5"');
+  var guardL = ln(34,56,29,51,C.b) + cir(27,49,3.5,C.b,'opacity=".5"');
+  function tgt(cx,cy,rx,ry){ return '<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+(rx||9)+'" ry="'+(ry||9)+'" fill="none" stroke="'+C.t+'" stroke-width="1.2" stroke-dasharray="3 2"/>'; }
+  function inc(y){ return '<g class="mv mv-in" style="opacity:0">'+ln(4,y,26,y,C.t,1.6,'stroke-dasharray="4 2"')+'<path d="M26 '+(y-3)+' L33 '+y+' L26 '+(y+3)+' Z" fill="'+C.t+'"/></g>'; }
+  function armG(cls,origin,inner){ return '<g class="mv '+cls+'" style="transform-origin:'+origin+'">'+inner+'</g>'; }
+  function upperG(cls,origin){ return '<g class="mv '+cls+'" style="transform-origin:'+origin+'">'+torso+head()+guardL+guardR+'</g>'; }
+  function svg(inner){ return '<svg viewBox="0 0 120 95">'+inner+'</svg>'; }
+  var base = floor+feet+legs+hips;
+
+  var M = {};
+  /* ── punches ── */
+  M.jab   = {n:'1',t:'Jab',c:'Lead hand snaps straight out. Snap it back fast.',
+    f:function(){ return svg(base+torso+head()+guardR+tgt(6,42)+armG('mv-ext','34px 56px', ln(34,56,10,47,C.a,2.2)+cir(7,45,4.5,C.a))); }};
+  M.cross = {n:'2',t:'Cross',c:'Rear hand straight across. Rotate the hip through.',
+    f:function(){ return svg(base+torso+head()+guardL+tgt(4,40)+armG('mv-ext','48px 56px', ln(48,56,8,44,C.a,2.2)+cir(5,42,4.5,C.a))); }};
+  M.hookl = {n:'3',t:'Lead hook',c:'Elbow at 90°. Pivot the lead foot. Crack through.',
+    f:function(){ return svg(base+torso+head()+guardR+tgt(52,38)+armG('mv-hookl','34px 56px', '<polyline points="34,56 20,50 30,40" fill="none" stroke="'+C.a+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'+cir(31,38,4.5,C.a))); }};
+  M.hookr = {n:'4',t:'Rear hook',c:'Same as 3, rear hand. Bigger hip rotation.',
+    f:function(){ return svg(base+torso+head()+guardL+tgt(28,38)+armG('mv-hookr','48px 56px', '<polyline points="48,56 62,50 52,40" fill="none" stroke="'+C.a+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'+cir(51,38,4.5,C.a))); }};
+  M.upl   = {n:'5',t:'Lead uppercut',c:'Drop and drive up. Palm faces you at contact.',
+    f:function(){ return svg(base+torso+head()+guardR+tgt(40,33,9,7)+armG('mv-up','34px 60px', '<path d="M34 60 Q26 64 28 46" fill="none" stroke="'+C.a+'" stroke-width="2.2" stroke-linecap="round"/>'+cir(28,43,4.5,C.a))); }};
+  M.upr   = {n:'6',t:'Rear uppercut',c:'Same as 5, rear hand. More hip, more power.',
+    f:function(){ return svg(base+torso+head()+guardL+tgt(40,33,9,7)+armG('mv-up','48px 60px', '<path d="M48 60 Q56 64 54 46" fill="none" stroke="'+C.a+'" stroke-width="2.2" stroke-linecap="round"/>'+cir(54,43,4.5,C.a))); }};
+  /* ── defense ── */
+  M.slipin  = {t:'Slip inside',c:'Head moves inside their punch. Bend the knees, not the waist.',
+    f:function(){ return svg(base+inc(46)+upperG('mv-slipr','41px 68px')); }};
+  M.slipout = {t:'Slip outside',c:'Head moves outside their punch. You end up on their blind side.',
+    f:function(){ return svg(base+inc(46)+upperG('mv-slipl','41px 68px')); }};
+  M.roll  = {t:'Roll / bob under',c:'Knees bend as the hook comes. Head dips under, comes up the other side.',
+    f:function(){ return svg(base+'<path d="M8 44 Q40 34 74 44" fill="none" stroke="'+C.t+'" stroke-width="1.4" stroke-dasharray="4 2"/>'+upperG('mv-roll','41px 68px')); }};
+  M.pull  = {t:'Pull / lean back',c:'Upper body leans away. Weight shifts to the rear foot.',
+    f:function(){ return svg(base+inc(44)+upperG('mv-pull','41px 68px')); }};
+  M.parry = {t:'Parry',c:'Open hand redirects their punch offline. Small movement, instant counter.',
+    f:function(){ return svg(base+torso+head()+guardR+inc(50)+armG('mv-parry','30px 52px', ln(34,56,30,52,C.a,2.2)+'<circle cx="28" cy="50" r="4.5" fill="none" stroke="'+C.a+'" stroke-width="2"/>')); }};
+  M.block = {t:'Block / cover up',c:'Gloves high, elbows tight. Absorb on the arms — never stay here.',
+    f:function(){ return svg(base+torso+head()+inc(46)+armG('mv-block','40px 52px', ln(34,58,30,48,C.a,2.2)+cir(29,45,4.5,C.a)+ln(48,58,52,48,C.a,2.2)+cir(53,45,4.5,C.a))); }};
+  M.duck  = {t:'Duck',c:'Straight down with the legs. Back stays straight, head drops under.',
+    f:function(){ return svg(base+ln(6,44,74,44,C.t,1.4,'stroke-dasharray="4 2"')+upperG('mv-duck','41px 68px')); }};
+  /* ── footwork ── */
+  function figMove(cls){
+    return svg(floor + ln(30,88,50,88,C.b,1.8,'opacity=".25"') + ln(44,88,60,88,C.b,1.8,'opacity=".15"') +
+      '<g class="mv '+cls+'">'+feet+legs+hips+torso+head()+guardL+guardR+'</g>');
+  }
+  M.stepin   = {t:'Step in',c:'Lead foot first, rear follows. Close the distance without crossing feet.', f:function(){ return figMove('mv-stepin'); }};
+  M.stepback = {t:'Step back',c:'Rear foot first, lead follows. Create space, land ready to counter.', f:function(){ return figMove('mv-stepback'); }};
+  M.pivot = {t:'Pivot',c:'Lead foot plants. Rear leg swings to a new angle — your whole line changes.',
+    f:function(){ return svg(floor+ln(30,88,50,88,C.b,1.8)+cir(40,88,3.5,C.gold)+ln(34,68,33,88,C.b)+hips+torso+head()+guardL+guardR+
+      '<g class="mv mv-pivot" style="transform-origin:40px 88px">'+ln(48,68,52,86,C.a,2)+ln(46,86,62,86,C.a,2)+'</g>'); }};
+  /* ── feints ── */
+  M.feint = {t:'Jab feint',c:'Start the jab, never finish it. They flinch — then you punch for real.',
+    f:function(){ return svg(base+torso+head()+guardR+armG('mv-feint','34px 56px', ln(34,56,10,47,C.a,2.2)+'<circle cx="7" cy="45" r="4.5" fill="none" stroke="'+C.a+'" stroke-width="2"/>')); }};
+  M.shfeint = {t:'Shoulder feint',c:'Dip the shoulder like a punch is coming. No punch. Read their reaction.',
+    f:function(){ return svg(base+upperG('mv-shfeint','41px 68px')); }};
+  M.level = {t:'Level feint',c:'Fake low to bring their guard down, then go upstairs — or the reverse.',
+    f:function(){ return svg(base+torso+head()+guardR+tgt(40,72,8,6)+tgt(6,42)+armG('mv-level','34px 56px', ln(34,56,10,47,C.a,2.2)+cir(7,45,4.5,C.a))); }};
+  return M;
+})();
+
+function demoCard(key){
+  var m = DEMO[key];
+  return '<div class="ob-pc demo-fig" onclick="playDemo(this)"><span class="play-badge">▶ tap</span>'+
+    (m.n?'<div class="ob-pn">'+m.n+'</div>':'')+ m.f() +
+    '<div class="ob-pname">'+m.t+'</div><div class="ob-pcue">'+m.c+'</div></div>';
+}
+function playDemo(el){
+  el.classList.remove('play');
+  void el.offsetWidth; /* reflow so the animation restarts on every tap */
+  el.classList.add('play');
+}
+var DEMO_PUNCHES = ['jab','cross','hookl','hookr','upl','upr'];
+var DEMO_DEF = ['slipin','slipout','roll','pull','parry','block','duck'];
+var DEMO_FOOT = ['stepin','stepback','pivot'];
+var DEMO_FEINT = ['feint','shfeint','level'];
+function renderOnboardingDemos(){
+  var g;
+  g=document.getElementById('ob-punch-grid'); if(g) g.innerHTML = DEMO_PUNCHES.map(demoCard).join('');
+  g=document.getElementById('ob-def-grid');   if(g) g.innerHTML = DEMO_DEF.map(demoCard).join('');
+  g=document.getElementById('ob-foot-grid');  if(g) g.innerHTML = DEMO_FOOT.map(demoCard).join('');
+  g=document.getElementById('ob-feint-grid'); if(g) g.innerHTML = DEMO_FEINT.map(demoCard).join('');
+}
+function buildLibRef(){
+  document.getElementById('lib-punch-grid').innerHTML = DEMO_PUNCHES.map(demoCard).join('');
+  document.getElementById('lib-def-rows').innerHTML = '<div class="ob-grid">'+DEMO_DEF.map(demoCard).join('')+'</div>';
+  document.getElementById('lib-foot-rows').innerHTML = '<div class="ob-grid">'+DEMO_FOOT.map(demoCard).join('')+'</div>';
+  document.getElementById('lib-feint-rows').innerHTML = '<div class="ob-grid">'+DEMO_FEINT.map(demoCard).join('')+'</div>';
+}
+
+/* ================= INIT ================= */
+buildTplList();
+buildPills();
+renderTime('round-val', settings.roundSec, 'per round');
+renderTime('rest-val', settings.restSec, 'per rest');
+buildLibLevelRow();
+renderComboList();
+renderHomeStats();
+setRate(speechRate);
+initTheme();
+loadProfileUI();
+setCoach(coachStyle, true);
+renderChallenge();
+renderOnboardingDemos();
+checkSnapshot();
+idbRestore();
+// Show onboarding on first ever visit
+if(!localStorage.getItem('corner_seen_intro')) showOnboarding();
+</script>
+</body>
+</html>

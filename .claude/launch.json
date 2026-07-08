@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "corner-static",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["/Users/heath/Desktop/Corner/serve.py"],
+      "port": 8743,
+      "autoPort": true
+    }
+  ]
+}
