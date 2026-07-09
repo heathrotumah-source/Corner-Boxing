@@ -12,13 +12,17 @@
 <meta name="theme-color" content="#15171A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
   :root{
-    /* ── Corner brand ── */
+    /* ── Corner brand ──
+       bg2  = recessed well (inputs, splash) vs. bg/card's raised-panel read
+       volt = the one hero accent, spent on purpose, never decoration
+       gold = belt brass (reward/achievement only)
+       steel/oxblood = ring-post and old leather-glove tones, replacing the
+       generic teal/purple pairing so nothing here reads as a templated default */
     --bg:#15171A; --bg2:#0f1113; --card:#1E2127; --card2:#262a31; --line:#2A2D32;
-    --blue:#D4FF3F; --blue-dim:#a8cc2f; --gold:#f3c94f; --teal:#34d1b6; --purple:#a78bfa;
+    --blue:#D4FF3F; --blue-dim:#a8cc2f; --gold:#F0B429; --steel:#6E9BAE; --oxblood:#B2555F;
     --text:#FAFAF7; --grey:#8A8D91; --red:#e5484d; --green:#34d399;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0;}
@@ -51,11 +55,14 @@
   /* ── GLOBAL DEFAULTS (brand spec) ── every rule below is a fallback:
      any existing class-based button/input styling elsewhere in this file
      is more specific and continues to win, this just sets a sane base. ── */
-  button{background:var(--blue);color:#15171A;border:none;border-radius:8px;padding:12px 20px;font-weight:500;font-size:16px;cursor:pointer;min-height:48px;transition:all 0.2s ease;}
-  button:hover{background:#E5FF66;}
-  button:active{transform:scale(0.98);}
+  button{background:var(--blue);color:#15171A;border:none;border-radius:8px;padding:12px 20px;font-weight:500;font-size:16px;cursor:pointer;min-height:48px;transition:transform .12s cubic-bezier(.2,.8,.2,1), box-shadow .12s ease, background-color .12s ease;}
+  /* loaded-glove feel: lift + soft volt glow on hover, sink + deepen on press -- snappy, not bouncy */
+  button:hover{background:#E5FF66;transform:translateY(-1px);box-shadow:0 6px 16px rgba(212,255,63,.22);}
+  button:active{background:var(--blue-dim);transform:translateY(1px) scale(.97);box-shadow:none;}
   button:disabled{opacity:0.5;pointer-events:none;}
-  input,textarea{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:12px;font-family:'Space Grotesk',sans-serif;font-size:16px;}
+  button:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+  /* wells, not panels: inputs read as pressed-in vs. cards' raised surface */
+  input,textarea{background:var(--bg2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:12px;font-family:'Space Grotesk',sans-serif;font-size:16px;transition:border-color .12s ease, box-shadow .12s ease;}
   input::placeholder,textarea::placeholder{color:var(--grey);}
   input:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(212,255,63,.2);}
 
@@ -92,15 +99,12 @@
   .pill small{display:block;font-size:10.5px;color:var(--grey);margin-top:2px;font-weight:400;}
   .pill.active small{color:rgba(21,23,26,.7);}
 
-  .voice-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
-  .voice-pill{flex-shrink:0;padding:9px 13px;background:var(--card2);border:1px solid var(--line);border-radius:12px;font-size:12.5px;cursor:pointer;white-space:nowrap;}
-  .voice-pill.active{background:var(--teal);color:#06281f;border-color:var(--teal);font-weight:700;}
-
-  .tpl-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;cursor:pointer;}
-  .tpl-card:active{border-color:var(--blue);}
+  .tpl-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;cursor:pointer;transition:transform .12s ease, border-color .12s ease, box-shadow .12s ease;}
+  .tpl-card:hover{border-color:var(--blue);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.28);}
+  .tpl-card:active{border-color:var(--blue);transform:translateY(0) scale(.99);box-shadow:none;}
   .tpl-top{display:flex;justify-content:space-between;align-items:baseline;}
   .tpl-name{font-size:17px;font-weight:700;}
-  .tpl-dur{font-size:12.5px;color:var(--gold);font-weight:700;background:rgba(243,201,79,.12);padding:3px 9px;border-radius:8px;}
+  .tpl-dur{font-size:12.5px;color:var(--gold);font-weight:700;background:rgba(240,180,41,.12);padding:3px 9px;border-radius:8px;}
   .tpl-desc{font-size:13px;color:var(--grey);margin-top:6px;line-height:1.45;}
   .tpl-meta{display:flex;gap:12px;margin-top:10px;font-size:10.5px;color:var(--grey);}
   .tpl-meta b{color:var(--text);}
@@ -141,11 +145,14 @@
   .tag-opt{padding:6px 10px;border-radius:8px;background:var(--card);border:1px solid var(--line);font-size:10.5px;text-transform:uppercase;color:var(--grey);cursor:pointer;}
   .tag-opt.on{background:var(--blue);color:#15171A;border-color:var(--blue);}
 
-  .streak-box{background:linear-gradient(135deg,#1c2116,var(--card));border:1px solid var(--blue);border-radius:16px;padding:20px;text-align:center;margin-bottom:14px;}
+  /* corner-tape texture: the one signature motif, spent on exactly three
+     "this matters" states -- streak, earned badge, and the active nav tab below */
+  .streak-box{background-image:repeating-linear-gradient(45deg, rgba(212,255,63,.05) 0 7px, transparent 7px 14px), linear-gradient(135deg,#1c2116,var(--card));border:1px solid var(--blue);border-radius:16px;padding:20px;text-align:center;margin-bottom:14px;}
   .streak-num{font-family:'Bebas Neue',sans-serif;font-size:46px;color:var(--blue);line-height:1;}
   .badge-grid{display:flex;flex-wrap:wrap;gap:8px;}
-  .badge{flex:1;min-width:95px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;opacity:.4;}
-  .badge.earned{opacity:1;border-color:var(--gold);}
+  .badge{flex:1;min-width:95px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;opacity:.4;transition:transform .12s ease;}
+  .badge.earned{opacity:1;border-color:var(--gold);background-image:repeating-linear-gradient(45deg, rgba(240,180,41,.10) 0 7px, transparent 7px 14px);}
+  .badge:hover{transform:translateY(-2px);}
   .badge .ic{font-size:20px;}
   .badge .bl{font-size:10px;color:var(--grey);margin-top:3px;}
   .history-row{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:7px;}
@@ -155,8 +162,10 @@
 
   /* bottom nav */
   .bottomnav{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:rgba(11,15,26,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;padding:9px 10px calc(9px + env(safe-area-inset-bottom));z-index:50;}
-  .navitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:14px;cursor:pointer;color:var(--grey);}
+  .navitem{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border-radius:14px;cursor:pointer;color:var(--grey);transition:color .12s ease, transform .12s ease;}
+  .navitem:active{transform:scale(.92);}
   .navitem.active{background:var(--card2);color:var(--text);}
+  .navitem.active::after{content:'';position:absolute;top:3px;left:50%;transform:translateX(-50%);width:16px;height:2.5px;border-radius:2px;background:var(--blue);}
   .navitem .ic{font-size:19px;}
   .navitem .lbl{font-size:9.5px;font-weight:600;}
 
@@ -226,7 +235,7 @@
   .ob-ic{font-size:17px;flex-shrink:0;margin-top:1px;}
   .ob-rn{font-size:12px;font-weight:600;color:var(--text);}
   .ob-rc{font-size:10.5px;color:var(--grey);margin-top:1px;line-height:1.4;}
-  .ob-note{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--purple);margin-top:14px;line-height:1.5;}
+  .ob-note{background:rgba(178,85,95,.14);border:1px solid rgba(178,85,95,.4);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--oxblood);margin-top:14px;line-height:1.5;}
   .ob-cta{width:100%;padding:17px;border:none;border-radius:12px;background:var(--blue);color:#15171A;font-weight:700;font-size:16px;cursor:pointer;margin-top:22px;font-family:'Space Grotesk',sans-serif;}
   /* ── IN-WORKOUT REF ── */
   #ref-overlay{position:fixed;inset:0;background:rgba(11,15,26,.94);z-index:150;overflow-y:auto;display:none;}
@@ -277,7 +286,7 @@
   .xp-top b{color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.04em;}
   .xp-bar{height:7px;background:var(--line);border-radius:4px;margin-top:8px;overflow:hidden;}
   .xp-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--gold));border-radius:4px;}
-  .challenge-card{background:linear-gradient(135deg,rgba(243,201,79,.10),var(--card));border:1px solid rgba(243,201,79,.45);border-radius:14px;padding:13px 14px;margin-bottom:12px;}
+  .challenge-card{background:linear-gradient(135deg,rgba(240,180,41,.10),var(--card));border:1px solid rgba(240,180,41,.45);border-radius:14px;padding:13px 14px;margin-bottom:12px;}
   .ch-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);}
   .ch-label{font-size:13.5px;font-weight:600;margin-top:4px;}
   .ch-meta{font-size:11px;color:var(--grey);margin-top:6px;}
@@ -303,7 +312,7 @@
   .fav-btn{background:none;border:none;font-size:18px;cursor:pointer;padding:4px 6px;color:var(--line);min-height:auto;}
   .fav-btn.on{color:var(--gold);}
   .combo-row.locked{opacity:.45;}
-  .lock-tag{font-size:9px;background:rgba(243,201,79,.15);color:var(--gold);padding:2px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.05em;}
+  .lock-tag{font-size:9px;background:rgba(240,180,41,.15);color:var(--gold);padding:2px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.05em;}
 
   /* ── CALENDAR ── */
   .cal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13.5px;font-weight:700;}
@@ -383,6 +392,57 @@
   #privacy-overlay .text-secondary{margin-bottom:14px;}
   #privacy-overlay ul{margin:0 0 14px;padding-left:20px;color:var(--text);font-size:13.5px;line-height:1.6;}
   #privacy-overlay ul li{margin-bottom:4px;}
+
+  /* ── INTERACTION / MOTION SYSTEM ──
+     Ghost/icon buttons (single class -- e.g. .fav-btn) sit at the same
+     cascade weight as the base `button:hover` rule above, so without an
+     explicit override each one would inherit its bright volt hover flash --
+     wrong for a Close button or a delete glyph. Each real base value gets
+     restated here alongside its own restrained feedback instead. */
+  .fav-btn:hover{background:none;transform:scale(1.12);}
+  .fav-btn:active{background:none;transform:scale(.9);}
+  .del-btn:hover{background:none;transform:scale(1.1);}
+  .del-btn:active{background:none;transform:scale(.9);}
+  .exit-btn:hover{background:none;border-color:var(--red);color:var(--red);}
+  .exit-btn:active{background:none;transform:scale(.96);}
+  .focus-btn:hover{background:none;border-color:var(--blue);color:var(--blue);}
+  .focus-btn:active{background:none;transform:scale(.94);}
+  .ref-qbtn:hover{background:none;border-color:var(--blue);color:var(--blue);}
+  .ref-qbtn:active{background:none;transform:scale(.92);}
+  .theme-btn:hover{background:var(--card);border-color:var(--blue);transform:translateY(-1px);}
+  .theme-btn:active{background:var(--card);transform:translateY(0) scale(.94);}
+  .cb-move-btn:hover:not(:disabled){background:var(--card2);border-color:var(--blue);}
+  .cb-move-btn:active:not(:disabled){background:var(--card2);transform:scale(.92);}
+  .ref-close button:hover{background:var(--card2);border-color:var(--blue);}
+  .ref-close button:active{background:var(--card2);transform:scale(.96);}
+  .stepper button:hover{background:var(--line);filter:brightness(1.25);}
+  .stepper button:active{background:var(--line);transform:scale(.9);}
+
+  /* raised-panel hover/press for the remaining clickable cards */
+  .combo-row, .cb-round-card, .demo-fig{transition:transform .12s ease, border-color .12s ease;}
+  .combo-row:hover{border-color:var(--blue);}
+  .stat-box{transition:transform .12s ease, border-color .12s ease;}
+  .cb-round-card:hover{transform:translateY(-2px);border-color:var(--blue);}
+  .cb-round-card:active{transform:translateY(0) scale(.98);}
+  .demo-fig:hover{transform:translateY(-2px);}
+  .demo-fig:active{transform:scale(.97);}
+
+  /* pills / tabs / tags: quiet lift when selectable and not already the active choice */
+  .pill, .lib-level, .lib-tab-btn, .tag-opt{transition:border-color .12s ease, transform .12s ease, color .12s ease;}
+  .pill:not(.active):hover, .lib-level:not(.active):hover, .lib-tab-btn:not(.active):hover,
+  .tag-opt:not(.on):hover{border-color:var(--blue);color:var(--text);transform:translateY(-1px);}
+  .pill:active, .lib-level:active, .lib-tab-btn:active, .tag-opt:active{transform:translateY(0) scale(.96);}
+
+  /* view/tab entrance: quick fade + rise, replayed automatically by the
+     existing .active class toggles in JS -- no logic touched here */
+  .view.active{animation:viewIn .22s cubic-bezier(.2,.8,.2,1);}
+  @keyframes viewIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .tabpane.active{animation:tabIn .18s ease-out;}
+  @keyframes tabIn{from{opacity:0;}to{opacity:1;}}
+
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important;}
+  }
 
 </style>
 </head>
@@ -466,8 +526,7 @@
 <div style="font-size:22px;font-weight:800;margin-bottom:4px;">Settings</div>
 <div class="section-title" style="margin-top:14px;">Voice</div>
 <div class="card">
-  <div class="voice-row" id="voice-row"></div>
-  <div class="pill-row" style="margin-top:10px;">
+  <div class="pill-row">
     <div class="pill" id="rate-slow" onclick="setRate(0.9)">Slower</div>
     <div class="pill active" id="rate-normal" onclick="setRate(1.05)">Normal</div>
     <div class="pill" id="rate-fast" onclick="setRate(1.25)">Faster</div>
@@ -1337,15 +1396,15 @@ const ROUND_TYPES = {
   warmup:    {label:"Warm-Up",       objective:"Loosen up, find your range.",                 filter:c=>c.tags.includes('jab') && !c.tags.includes('power') && !c.tags.includes('counter'), progression:["1","1-1","1-2","1-1-2"], color:'#34d399', pace:'slow'},
   jab:       {label:"Jab Focus",     objective:"Work behind the jab. Accuracy over power.",   filter:c=>c.tags.includes('jab'), progression:["1","1-1","1-2","1-2-1","1-2-3"], color:'#4f8ef7', pace:'fast'},
   power:     {label:"Power",         objective:"Sit down on your shots. Turn the hip over.",  filter:c=>c.tags.includes('power'), color:'#e5484d', pace:'slow'},
-  flow:      {label:"Combo Flow",    objective:"Stay loose, chain it together.",              filter:c=>c.tags.includes('combo'), color:'#a78bfa', pace:'normal'},
-  speed:     {label:"Speed",         objective:"Hands up, in and out fast.",                  filter:c=>c.tags.includes('speed') || c.tags.includes('jab'), color:'#f3c94f', pace:'rapid'},
-  defense:   {label:"Defense & Movement", objective:"Head movement and footwork.",             filter:c=>c.tags.includes('defense'), color:'#34d1b6', pace:'normal'},
+  flow:      {label:"Combo Flow",    objective:"Stay loose, chain it together.",              filter:c=>c.tags.includes('combo'), color:'#B2555F', pace:'normal'},
+  speed:     {label:"Speed",         objective:"Hands up, in and out fast.",                  filter:c=>c.tags.includes('speed') || c.tags.includes('jab'), color:'#F0B429', pace:'rapid'},
+  defense:   {label:"Defense & Movement", objective:"Head movement and footwork.",             filter:c=>c.tags.includes('defense'), color:'#6E9BAE', pace:'normal'},
   body:      {label:"Body Attack",   objective:"Work downstairs, take the legs out.",         filter:c=>c.tags.includes('body'), color:'#e5484d', pace:'slow'},
-  counter:   {label:"Counter Punching", objective:"Let it come to you, then make them pay.",  filter:c=>c.tags.includes('counter'), color:'#a78bfa', pace:'normal'},
+  counter:   {label:"Counter Punching", objective:"Let it come to you, then make them pay.",  filter:c=>c.tags.includes('counter'), color:'#B2555F', pace:'normal'},
   southpaw:  {label:"Vs Southpaw",   objective:"Lead foot outside theirs. Control the angle.", filter:c=>c.tags.includes('southpaw'), color:'#4f8ef7', pace:'normal'},
   pressure:  {label:"Pressure",      objective:"Walk them down. Cut the ring off.",            filter:c=>c.tags.includes('power') || c.tags.includes('combo'), color:'#e5484d', pace:'fast'},
-  technical: {label:"Technical",     objective:"Slow it down. Quality over output today.",     filter:c=>c.tags.includes('combo') || c.tags.includes('jab'), color:'#34d1b6', pace:'slow'},
-  conditioning:{label:"Conditioning",objective:"Output round. Don't let your hands drop.",     filter:c=>true, color:'#f3c94f', pace:'rapid'},
+  technical: {label:"Technical",     objective:"Slow it down. Quality over output today.",     filter:c=>c.tags.includes('combo') || c.tags.includes('jab'), color:'#6E9BAE', pace:'slow'},
+  conditioning:{label:"Conditioning",objective:"Output round. Don't let your hands drop.",     filter:c=>true, color:'#F0B429', pace:'rapid'},
   finisher:  {label:"Finisher",      objective:"Empty the tank. Finish on your feet, balanced.", filter:c=>true, color:'#e5484d', pace:'rapid'}
 };
 /* Each pace band = realistic range (seconds) for the gap BETWEEN combo callouts on top of throw time.
@@ -1579,28 +1638,21 @@ let surveyAnswers = { hardest:null, complete:null, feel:null };
 let speechRate = parseFloat(localStorage.getItem('corner_rate')||'1.05');
 let selectedVoiceURI = localStorage.getItem('corner_voice_uri') || null;
 
-/* ================= VOICE SETUP ================= */
-/* Novelty / joke system voices (macOS "Grandma", "Zarvox", "Bad News" etc.) get filtered out
-   entirely — they clutter the list and nobody wants their coach to sound like a cartoon. */
+/* ================= VOICE SETUP =================
+   No user-facing picker -- callouts are almost entirely pre-generated
+   ElevenLabs audio (see AUDIO_MANIFEST above), so choice of system voice
+   barely matters anymore. This just silently settles on a decent one for
+   the rare browser-TTS fallback (custom combos, round counts beyond the
+   pre-baked range). */
 const NOVELTY_VOICE_RE = /\b(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|grandma|grandpa|hysterical|jester|junior|organ|pipe organ|princess|ralph|superstar|trinoids|whisper|zarvox|wobble|deranged|rocko|shelley|sandy|eddy|reed|flo)\b/i;
-let voiceList = []; // last-rendered voice list, indexed by selectVoiceAt (see below)
-function populateVoices(){
+function pickDefaultVoice(){
+  if(selectedVoiceURI) return;
   const voices = window.speechSynthesis.getVoices().filter(v=>v.lang.startsWith('en') && !NOVELTY_VOICE_RE.test(v.name));
   const list = voices.length ? voices : window.speechSynthesis.getVoices().filter(v=>!NOVELTY_VOICE_RE.test(v.name));
-  voiceList = list;
-  const row = document.getElementById('voice-row');
-  if(!list.length){ row.innerHTML = '<div class="hint">Voices loading… try again in a second.</div>'; return; }
-  if(!selectedVoiceURI && list.length){
-    const pref = list.find(v=>/samantha|karen|daniel|moira|google uk english (male|female)|google us english/i.test(v.name));
-    selectedVoiceURI = (pref||list[0]).voiceURI;
-  }
-  /* Index into voiceList rather than interpolating the (browser/OS-supplied)
-     voiceURI string into the onclick attribute -- keeps every inline handler
-     argument a plain number, so there's never a string to escape. */
-  row.innerHTML = list.map((v,i)=>`<div class="voice-pill ${v.voiceURI===selectedVoiceURI?'active':''}" onclick="selectVoiceAt(${i})">${escapeHtml(v.name.replace('Microsoft ','').replace('Google ',''))}</div>`).join('');
+  if(!list.length) return;
+  const pref = list.find(v=>/samantha|karen|daniel|moira|google uk english (male|female)|google us english/i.test(v.name));
+  selectedVoiceURI = (pref||list[0]).voiceURI;
 }
-function selectVoiceAt(i){ const v = voiceList[i]; if(v) selectVoice(v.voiceURI); }
-function selectVoice(uri){ selectedVoiceURI = uri; localStorage.setItem('corner_voice_uri', uri); populateVoices(); }
 function setRate(r){
   speechRate = r;
   localStorage.setItem('corner_rate', r);
@@ -1622,8 +1674,8 @@ function setCoach(style, silent){
 }
 function testVoice(){ speakGeneratedOrFallback(COACH_TEST[coachStyle] || "Jab, cross, hook."); }
 if('speechSynthesis' in window){
-  window.speechSynthesis.onvoiceschanged = populateVoices;
-  populateVoices();
+  window.speechSynthesis.onvoiceschanged = pickDefaultVoice;
+  pickDefaultVoice();
 }
 
 /* ================= TABS / NAV ================= */
@@ -2878,7 +2930,7 @@ function setLibTab(tab){
    physically performs the movement when tapped. Pure SVG + CSS,
    zero network, zero video bytes. */
 const DEMO = (function(){
-  var C={b:'#8a93a8',a:'#4f8ef7',t:'#e5484d',gold:'#f3c94f',fl:'#3a4258'};
+  var C={b:'#8a93a8',a:'#4f8ef7',t:'#e5484d',gold:'#F0B429',fl:'#3a4258'};
   function ln(x1,y1,x2,y2,col,w,extra){ return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+col+'" stroke-width="'+(w||1.8)+'" stroke-linecap="round" '+(extra||'')+'/>'; }
   function cir(cx,cy,r,fill,extra){ return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+fill+'" '+(extra||'')+'/>'; }
   var floor = ln(14,88,106,88,C.fl,1);
