@@ -2,21 +2,39 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Corner — Boxing Trainer</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Corner">
+<meta name="theme-color" content="#15171A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0b0f1a; --bg2:#080b14; --card:#141b2c; --card2:#1a2236; --line:#232c42;
-    --blue:#4f8ef7; --blue-dim:#2f5fc4; --gold:#f3c94f; --teal:#34d1b6; --purple:#a78bfa;
-    --text:#eef1f7; --grey:#8993ab; --red:#e5484d; --green:#34d399;
+    /* ── Corner brand ── */
+    --bg:#15171A; --bg2:#0f1113; --card:#1E2127; --card2:#262a31; --line:#2A2D32;
+    --blue:#D4FF3F; --blue-dim:#a8cc2f; --gold:#f3c94f; --teal:#34d1b6; --purple:#a78bfa;
+    --text:#FAFAF7; --grey:#8A8D91; --red:#e5484d; --green:#34d399;
   }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;height:100%;}
-  .app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative;}
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0;}
+  html,body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;height:100%;line-height:1.6;}
+  h1,h2,h3{font-weight:500;letter-spacing:1px;text-wrap:balance;}
+  h1{font-size:24px;}
+  h2{font-size:24px;}
+  h3{font-size:16px;}
+  body,p{font-size:16px;font-weight:400;}
+  button,label{font-size:16px;font-weight:500;}
+  .text-secondary{color:var(--grey);}
+  .accent{color:var(--blue);}
+  .app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative;padding-top:env(safe-area-inset-top);}
 
-  .header{padding:18px 20px 6px;display:flex;justify-content:space-between;align-items:flex-start;}
+  .header{padding:18px 20px 6px;display:flex;justify-content:space-between;align-items:center;}
+  .header-left{display:flex;align-items:center;gap:10px;}
   .greeting{font-size:22px;font-weight:800;}
   .greeting span{color:var(--blue);}
   .subgreeting{font-size:12.5px;color:var(--grey);margin-top:2px;}
@@ -28,7 +46,34 @@
   .tabpane.active{display:block;}
   .pad{padding:14px 20px 110px;}
 
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;}
+  .card{background:var(--card);border:0.5px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px;}
+
+  /* ── GLOBAL DEFAULTS (brand spec) ── every rule below is a fallback:
+     any existing class-based button/input styling elsewhere in this file
+     is more specific and continues to win, this just sets a sane base. ── */
+  button{background:var(--blue);color:#15171A;border:none;border-radius:8px;padding:12px 20px;font-weight:500;font-size:16px;cursor:pointer;min-height:48px;transition:all 0.2s ease;}
+  button:hover{background:#E5FF66;}
+  button:active{transform:scale(0.98);}
+  button:disabled{opacity:0.5;pointer-events:none;}
+  input,textarea{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:12px;font-family:'Space Grotesk',sans-serif;font-size:16px;}
+  input::placeholder,textarea::placeholder{color:var(--grey);}
+  input:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(212,255,63,.2);}
+
+  /* ── LOGO / WORDMARK ── */
+  .corner-logo{width:48px;height:48px;display:block;margin:0 auto;}
+  .corner-logo.splash{width:64px;height:64px;}
+  .corner-logo.header{width:40px;height:40px;margin:0;}
+  .wordmark{display:inline-flex;align-items:center;gap:2px;font-size:22px;font-weight:500;letter-spacing:4px;color:var(--text);font-family:'Space Grotesk',sans-serif;}
+  .wordmark-o{width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+  /* ── SPLASH SCREEN ── */
+  .splash-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:9999;}
+  .splash-screen.hidden{display:none;}
+  .splash-ring{stroke-dasharray:87.96;stroke-dashoffset:87.96;animation:drawRing 0.9s ease-out forwards;}
+  @keyframes drawRing{to{stroke-dashoffset:0;}}
+  .splash-wordmark{font-size:20px;opacity:0;animation:fadeIn 0.5s ease-out 0.6s forwards;}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
   .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--grey);margin:18px 0 10px;}
   .section-title:first-child{margin-top:4px;}
 
@@ -37,15 +82,15 @@
   .stat-num{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--blue);line-height:1;}
   .stat-lbl{font-size:11px;color:var(--grey);margin-top:4px;}
 
-  .bigbtn{width:100%;padding:16px;border:none;border-radius:14px;background:var(--blue);color:#fff;font-weight:700;font-size:15.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .bigbtn{width:100%;padding:16px;border:none;border-radius:14px;background:var(--blue);color:#15171A;font-weight:700;font-size:15.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
   .bigbtn.secondary{background:var(--card2);border:1px solid var(--line);color:var(--text);}
   .bigbtn.gold{background:var(--gold);color:#1a1a1a;}
 
   .pill-row{display:flex;gap:8px;flex-wrap:wrap;}
   .pill{flex:1;min-width:80px;padding:11px 9px;background:var(--card2);border:1px solid var(--line);border-radius:10px;text-align:center;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--text);}
-  .pill.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .pill.active{background:var(--blue);border-color:var(--blue);color:#15171A;}
   .pill small{display:block;font-size:10.5px;color:var(--grey);margin-top:2px;font-weight:400;}
-  .pill.active small{color:rgba(255,255,255,.8);}
+  .pill.active small{color:rgba(21,23,26,.7);}
 
   .voice-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;}
   .voice-pill{flex-shrink:0;padding:9px 13px;background:var(--card2);border:1px solid var(--line);border-radius:12px;font-size:12.5px;cursor:pointer;white-space:nowrap;}
@@ -65,10 +110,10 @@
 
   .stepper{display:flex;align-items:center;justify-content:space-between;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:6px;}
   .stepper-val{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.04em;}
-  .stepper-val small{font-family:'Inter',sans-serif;font-size:10.5px;color:var(--grey);display:block;margin-top:-3px;font-weight:400;}
-  .stepper button{width:38px;height:38px;border-radius:8px;border:none;background:var(--line);color:var(--text);font-size:18px;font-weight:700;cursor:pointer;}
+  .stepper-val small{font-family:'Space Grotesk',sans-serif;font-size:10.5px;color:var(--grey);display:block;margin-top:-3px;font-weight:400;}
+  .stepper button{width:38px;height:38px;min-height:38px;padding:0;border-radius:8px;border:none;background:var(--line);color:var(--text);font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 
-  textarea#smart-input{width:100%;min-height:90px;background:var(--card2);border:1px solid var(--line);border-radius:12px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;padding:12px;resize:vertical;}
+  textarea#smart-input{width:100%;min-height:90px;background:var(--card2);border:1px solid var(--line);border-radius:12px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:14px;padding:12px;resize:vertical;}
   .smart-examples{font-size:11.5px;color:var(--grey);margin-top:8px;line-height:1.6;}
   .smart-examples span{color:var(--text);}
   .preview-round{display:flex;justify-content:space-between;align-items:center;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 13px;margin-bottom:6px;font-size:13px;}
@@ -89,14 +134,14 @@
   .combo-row .nm{font-size:11.5px;color:var(--grey);margin-top:1px;}
   .combo-row .tags{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;}
   .tag{font-size:9px;text-transform:uppercase;letter-spacing:.05em;background:var(--line);color:var(--grey);padding:2px 6px;border-radius:5px;}
-  .del-btn{background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;padding:4px 8px;}
+  .del-btn{background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;padding:4px 8px;min-height:auto;}
   .add-card{background:var(--card2);border:1px dashed var(--line);border-radius:14px;padding:14px;margin-top:14px;}
-  .add-card input[type=text]{width:100%;padding:11px;background:var(--card);border:1px solid var(--line);border-radius:9px;color:var(--text);font-family:'Inter',sans-serif;font-size:14px;margin-bottom:8px;}
+  .add-card input[type=text]{width:100%;padding:11px;background:var(--card);border:1px solid var(--line);border-radius:9px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:14px;margin-bottom:8px;}
   .tag-pick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
   .tag-opt{padding:6px 10px;border-radius:8px;background:var(--card);border:1px solid var(--line);font-size:10.5px;text-transform:uppercase;color:var(--grey);cursor:pointer;}
-  .tag-opt.on{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .tag-opt.on{background:var(--blue);color:#15171A;border-color:var(--blue);}
 
-  .streak-box{background:linear-gradient(135deg,#1c2742,var(--card));border:1px solid var(--blue);border-radius:16px;padding:20px;text-align:center;margin-bottom:14px;}
+  .streak-box{background:linear-gradient(135deg,#1c2116,var(--card));border:1px solid var(--blue);border-radius:16px;padding:20px;text-align:center;margin-bottom:14px;}
   .streak-num{font-family:'Bebas Neue',sans-serif;font-size:46px;color:var(--blue);line-height:1;}
   .badge-grid{display:flex;flex-wrap:wrap;gap:8px;}
   .badge{flex:1;min-width:95px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center;opacity:.4;}
@@ -122,7 +167,7 @@
   .round-tag b{color:var(--text);}
   .round-type-tag{font-size:15px;font-weight:700;color:var(--blue);margin-top:2px;}
   .round-objective{font-size:11.5px;color:var(--grey);margin-top:1px;}
-  .exit-btn{background:none;border:1px solid var(--line);color:var(--grey);border-radius:8px;padding:7px 13px;font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;}
+  .exit-btn{background:none;border:1px solid var(--line);color:var(--grey);border-radius:8px;padding:7px 13px;font-family:'Space Grotesk',sans-serif;font-size:12px;cursor:pointer;min-height:auto;}
 
   .intensity-bar{height:5px;background:var(--line);border-radius:3px;margin:8px 0 0;overflow:hidden;}
   .intensity-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--gold),var(--red));}
@@ -141,8 +186,8 @@
   .combo-name{font-size:13px;color:var(--grey);margin-top:7px;}
 
   .controls{display:flex;gap:10px;margin-top:18px;}
-  .ctrl-btn{flex:1;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
-  .ctrl-btn.primary{background:var(--blue);border-color:var(--blue);}
+  .ctrl-btn{flex:1;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+  .ctrl-btn.primary{background:var(--blue);border-color:var(--blue);color:#15171A;}
 
   .progress-dots{display:flex;gap:5px;justify-content:center;margin-top:14px;flex-wrap:wrap;max-width:280px;}
   .dot{width:8px;height:8px;border-radius:50%;background:var(--line);}
@@ -152,7 +197,7 @@
   .done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px;text-align:center;}
   .done .big{font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--gold);letter-spacing:.04em;}
   .done p{color:var(--grey);font-size:14px;margin-top:6px;}
-  .done button{margin-top:24px;padding:15px 28px;border:none;border-radius:12px;background:var(--blue);color:#fff;font-weight:700;font-size:15px;cursor:pointer;}
+  .done button{margin-top:24px;padding:15px 28px;border:none;border-radius:12px;background:var(--blue);color:#15171A;font-weight:700;font-size:15px;cursor:pointer;}
   .survey{width:100%;text-align:left;margin-top:22px;}
   .survey .q{font-size:13px;color:var(--grey);margin-bottom:8px;}
   .survey .opts{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
@@ -164,7 +209,7 @@
   /* ── ONBOARDING ── */
   #onboarding{position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto;display:none;}
   #onboarding.show{display:block;}
-  .ob-wrap{padding:26px 20px 48px;max-width:480px;margin:0 auto;}
+  .ob-wrap{padding:calc(26px + env(safe-area-inset-top)) 20px 48px;max-width:480px;margin:0 auto;}
   .ob-logo{font-family:'Bebas Neue',sans-serif;font-size:38px;margin-bottom:4px;}
   .ob-logo span{color:var(--gold);}
   .ob-intro{font-size:13px;color:var(--grey);margin-bottom:20px;line-height:1.55;}
@@ -182,13 +227,13 @@
   .ob-rn{font-size:12px;font-weight:600;color:var(--text);}
   .ob-rc{font-size:10.5px;color:var(--grey);margin-top:1px;line-height:1.4;}
   .ob-note{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);border-radius:10px;padding:12px 14px;font-size:12px;color:var(--purple);margin-top:14px;line-height:1.5;}
-  .ob-cta{width:100%;padding:17px;border:none;border-radius:12px;background:var(--blue);color:#fff;font-weight:700;font-size:16px;cursor:pointer;margin-top:22px;font-family:'Inter',sans-serif;}
+  .ob-cta{width:100%;padding:17px;border:none;border-radius:12px;background:var(--blue);color:#15171A;font-weight:700;font-size:16px;cursor:pointer;margin-top:22px;font-family:'Space Grotesk',sans-serif;}
   /* ── IN-WORKOUT REF ── */
   #ref-overlay{position:fixed;inset:0;background:rgba(11,15,26,.94);z-index:150;overflow-y:auto;display:none;}
   #ref-overlay.show{display:block;}
-  .ref-wrap{padding:18px 20px 40px;max-width:480px;margin:0 auto;}
+  .ref-wrap{padding:calc(18px + env(safe-area-inset-top)) 20px 40px;max-width:480px;margin:0 auto;}
   .ref-close{display:flex;justify-content:flex-end;margin-bottom:12px;}
-  .ref-close button{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .ref-close button{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:'Space Grotesk',sans-serif;min-height:auto;}
   .ref-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px;}
   .ref-cell{background:var(--card);border:.5px solid var(--line);border-radius:8px;padding:8px;text-align:center;}
   .ref-num{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--blue);line-height:1;}
@@ -197,17 +242,33 @@
   .ref-sec{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--grey);margin:14px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--line);}
   /* ref button on combo card */
   .combo-card{position:relative;}
-  .ref-qbtn{position:absolute;top:10px;right:12px;background:none;border:1px solid var(--line);color:var(--grey);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;}
+  .ref-qbtn{position:absolute;top:10px;right:12px;background:none;border:1px solid var(--line);color:var(--grey);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:'Space Grotesk',sans-serif;min-height:auto;}
   /* ── LIB TABS ── */
   .lib-tab-row{display:flex;gap:6px;margin-bottom:12px;}
-  .lib-tab-btn{flex:1;text-align:center;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card2);font-size:12px;cursor:pointer;color:var(--grey);font-family:'Inter',sans-serif;}
+  .lib-tab-btn{flex:1;text-align:center;padding:9px;border-radius:10px;border:1px solid var(--line);background:var(--card2);font-size:12px;cursor:pointer;color:var(--grey);font-family:'Space Grotesk',sans-serif;}
   .lib-tab-btn.active{border-color:var(--blue);color:var(--blue);font-weight:600;}
+
+  /* ── CUSTOM BUILDER ── */
+  .cb-round-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;}
+  .cb-round-card{background:var(--card2);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:10px;padding:10px 11px;cursor:pointer;}
+  .cb-round-card .cbn{font-size:13px;font-weight:700;}
+  .cb-round-card .cbo{font-size:10.5px;color:var(--grey);margin-top:3px;line-height:1.4;}
+  .cb-round-row{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;}
+  .cb-round-row-top{display:flex;align-items:center;gap:8px;}
+  .cb-round-row-top .cbrn{flex:1;font-size:13.5px;font-weight:700;}
+  .cb-round-row-controls{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;}
+  .cb-round-row-controls .stepper{flex:1;padding:4px;}
+  .cb-round-row-controls .stepper button{width:30px;height:30px;min-height:30px;font-size:15px;}
+  .cb-round-row-controls .stepper-val{font-size:15px;}
+  .cb-move{display:flex;gap:6px;}
+  .cb-move-btn{width:32px;height:32px;min-height:32px;padding:0;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .cb-move-btn:disabled{opacity:.3;cursor:default;}
 
   /* ── LIGHT MODE ── */
   body.light{--bg:#f3f5fa;--bg2:#ffffff;--card:#ffffff;--card2:#eaeef7;--line:#d6dcea;--text:#141925;--grey:#5b6479;}
   body.light .bottomnav{background:rgba(247,249,253,.94);}
   body.light #onboarding, body.light #ref-overlay{background:var(--bg);}
-  .theme-btn{background:var(--card);border:1px solid var(--line);border-radius:20px;width:38px;height:38px;font-size:16px;cursor:pointer;margin-left:8px;}
+  .theme-btn{background:var(--card);border:1px solid var(--line);border-radius:20px;width:38px;height:38px;min-height:38px;padding:0;font-size:16px;cursor:pointer;margin-left:8px;display:flex;align-items:center;justify-content:center;}
   .header-right{display:flex;align-items:center;}
 
   /* ── XP / CHALLENGE ── */
@@ -222,24 +283,24 @@
   .ch-meta{font-size:11px;color:var(--grey);margin-top:6px;}
 
   /* ── RESUME BANNER ── */
-  .resume-banner{background:linear-gradient(135deg,rgba(79,142,247,.14),var(--card));border:1px solid var(--blue);border-radius:14px;padding:13px 14px;margin-bottom:12px;display:none;}
+  .resume-banner{background:linear-gradient(135deg,rgba(212,255,63,.14),var(--card));border:1px solid var(--blue);border-radius:14px;padding:13px 14px;margin-bottom:12px;display:none;}
   .resume-banner.show{display:block;}
   .resume-banner .rb-t{font-size:13.5px;font-weight:700;}
   .resume-banner .rb-s{font-size:11.5px;color:var(--grey);margin:3px 0 10px;}
   .resume-row{display:flex;gap:8px;}
-  .resume-row button{flex:1;padding:11px;border-radius:10px;border:none;font-family:'Inter',sans-serif;font-weight:700;font-size:13px;cursor:pointer;}
-  .rb-go{background:var(--blue);color:#fff;}
+  .resume-row button{flex:1;padding:11px;border-radius:10px;border:none;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;cursor:pointer;}
+  .rb-go{background:var(--blue);color:#15171A;}
   .rb-x{background:var(--card2);border:1px solid var(--line);color:var(--grey);}
 
   /* ── PROFILE CARD ── */
   .profile-line{display:flex;justify-content:space-between;align-items:center;padding:9px 0;}
   .profile-line + .profile-line{border-top:1px solid var(--line);}
   .profile-line .pl{font-size:13px;color:var(--grey);}
-  .profile-line input{background:transparent;border:none;color:var(--text);font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;text-align:right;outline:none;max-width:55%;}
-  .profile-line select{background:var(--card2);border:1px solid var(--line);color:var(--text);font-family:'Inter',sans-serif;font-size:12.5px;padding:6px 9px;border-radius:8px;}
+  .profile-line input{background:transparent;border:none;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13.5px;font-weight:600;text-align:right;outline:none;max-width:55%;}
+  .profile-line select{background:var(--card2);border:1px solid var(--line);color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:12.5px;padding:6px 9px;border-radius:8px;}
 
   /* ── FAVORITES ── */
-  .fav-btn{background:none;border:none;font-size:18px;cursor:pointer;padding:4px 6px;color:var(--line);}
+  .fav-btn{background:none;border:none;font-size:18px;cursor:pointer;padding:4px 6px;color:var(--line);min-height:auto;}
   .fav-btn.on{color:var(--gold);}
   .combo-row.locked{opacity:.45;}
   .lock-tag{font-size:9px;background:rgba(243,201,79,.15);color:var(--gold);padding:2px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.05em;}
@@ -255,7 +316,7 @@
 
   /* ── WORKOUT: focus mode / bigger targets / landscape ── */
   .controls .ctrl-btn{padding:18px 12px;font-size:15px;}
-  .focus-btn{background:none;border:1px solid var(--line);color:var(--grey);border-radius:8px;padding:7px 11px;font-family:'Inter',sans-serif;font-size:12px;cursor:pointer;margin-right:8px;}
+  .focus-btn{background:none;border:1px solid var(--line);color:var(--grey);border-radius:8px;padding:7px 11px;font-family:'Space Grotesk',sans-serif;font-size:12px;cursor:pointer;margin-right:8px;min-height:auto;}
   #view-workout.focus .round-objective, #view-workout.focus .progress-dots, #view-workout.focus .intensity-bar{display:none;}
   #view-workout.focus .timer{font-size:104px;}
   #view-workout.focus .combo-nums{font-size:44px;}
@@ -324,10 +385,32 @@
 <body>
 <div class="app">
 
+<!-- SPLASH SCREEN -->
+<div id="splash-screen" class="splash-screen">
+  <svg class="corner-logo splash" width="64" height="64" viewBox="0 0 36 36" aria-hidden="true">
+    <rect x="4" y="4" width="28" height="28" rx="9" fill="none" stroke="#D4FF3F" stroke-width="6" class="splash-ring"/>
+  </svg>
+  <div class="wordmark splash-wordmark">
+    <span>C</span>
+    <svg class="wordmark-o" width="28" height="28" viewBox="0 0 36 36" aria-hidden="true">
+      <rect x="4" y="4" width="28" height="28" rx="9" fill="none" stroke="#D4FF3F" stroke-width="6"/>
+    </svg>
+    <span>RNER</span>
+  </div>
+</div>
+
 <!-- ONBOARDING OVERLAY -->
 <div id="onboarding">
 <div class="ob-wrap">
-<div class="ob-logo">CORNER<span>.</span></div>
+<div class="ob-logo">
+<div class="wordmark">
+  <span>C</span>
+  <svg class="wordmark-o" width="30" height="30" viewBox="0 0 36 36" aria-hidden="true">
+    <rect x="4" y="4" width="28" height="28" rx="9" fill="none" stroke="#D4FF3F" stroke-width="6"/>
+  </svg>
+  <span>RNER</span>
+</div>
+</div>
 <div class="ob-intro">Your boxing coach in your pocket. Before your first session, here's the numbering system — everything in the app is built around it.</div>
 <div class="ob-sec">The six punches — tap any card to play the movement</div>
 <div class="ob-grid" id="ob-punch-grid"></div>
@@ -428,9 +511,14 @@
 
 
   <div class="header">
-    <div>
-      <div class="greeting">Let's <span>train</span>.</div>
-      <div class="subgreeting" id="subgreeting">Ready when you are.</div>
+    <div class="header-left">
+      <svg class="corner-logo header" width="40" height="40" viewBox="0 0 36 36" aria-hidden="true">
+        <rect x="4" y="4" width="28" height="28" rx="9" fill="none" stroke="#D4FF3F" stroke-width="6"/>
+      </svg>
+      <div>
+        <div class="greeting">Let's <span>train</span>.</div>
+        <div class="subgreeting" id="subgreeting">Ready when you are.</div>
+      </div>
     </div>
     <div class="header-right">
       <div class="streak-pill"><span id="streak-emoji">🔥</span> <span id="streak-mini">0</span></div>
@@ -471,21 +559,60 @@
     <!-- SMART BUILDER -->
     <div class="tabpane" id="pane-smart">
       <div class="pad">
-        <div class="section-title" style="margin-top:14px;">Build For Me</div>
-        <div class="card">
-          <div style="font-size:11px;color:var(--grey);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">How long have you got?</div>
-          <div class="pill-row" id="smart-dur-row" style="margin-bottom:10px;">
-            <div class="pill" onclick="setSmartDur(15,this)">15 min</div>
-            <div class="pill active" onclick="setSmartDur(30,this)">30 min</div>
-            <div class="pill" onclick="setSmartDur(45,this)">45 min</div>
-            <div class="pill" onclick="setSmartDur(60,this)">60 min</div>
-          </div>
-          <textarea id="smart-input" placeholder="e.g. I've got 25 minutes, my jab is weak and I gas out in the later rounds"></textarea>
-          <div class="smart-examples">Try: <span>"30 min, sore today, keep it technical"</span> · <span>"20 min conditioning, struggle with southpaws"</span></div>
-          <button class="bigbtn gold" style="margin-top:12px;" onclick="buildSmartSession()">Build My Session</button>
+        <div class="lib-tab-row" style="margin-top:14px;">
+          <div class="lib-tab-btn active" id="st-ai" onclick="setSmartSubTab('ai')">AI Builder</div>
+          <div class="lib-tab-btn" id="st-custom" onclick="setSmartSubTab('custom')">Custom Builder</div>
         </div>
-        <div id="smart-preview"></div>
-        <div class="hint">Reads your description for time, focus, and fatigue level — keyword-based, fully offline.</div>
+
+        <!-- AI BUILDER -->
+        <div id="smart-ai-panel">
+          <div class="section-title" style="margin-top:0;">Build For Me</div>
+          <div class="card">
+            <div style="font-size:11px;color:var(--grey);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">How long have you got?</div>
+            <div class="pill-row" id="smart-dur-row" style="margin-bottom:10px;">
+              <div class="pill" onclick="setSmartDur(15,this)">15 min</div>
+              <div class="pill active" onclick="setSmartDur(30,this)">30 min</div>
+              <div class="pill" onclick="setSmartDur(45,this)">45 min</div>
+              <div class="pill" onclick="setSmartDur(60,this)">60 min</div>
+            </div>
+            <textarea id="smart-input" placeholder="e.g. I've got 25 minutes, my jab is weak and I gas out in the later rounds"></textarea>
+            <div class="smart-examples">Try: <span>"30 min, sore today, keep it technical"</span> · <span>"20 min conditioning, struggle with southpaws"</span></div>
+            <button class="bigbtn gold" style="margin-top:12px;" onclick="buildSmartSession()">Build My Session</button>
+          </div>
+          <div id="smart-preview"></div>
+          <div class="hint">Reads your description for time, focus, and fatigue level — keyword-based, fully offline.</div>
+        </div>
+
+        <!-- CUSTOM BUILDER -->
+        <div id="smart-custom-panel" style="display:none;">
+          <div class="section-title" style="margin-top:0;">Pick Your Rounds</div>
+          <div class="hint" style="text-align:left;padding:0 0 10px;">Tap a round to add it to your session. Add the same round more than once if you want. Most sessions start with a Warm-Up and end with a Finisher.</div>
+          <div class="cb-round-grid" id="cb-round-grid"></div>
+
+          <div class="section-title">Your Rounds <span id="cb-round-count" style="color:var(--text);">(0)</span></div>
+          <div id="cb-round-list"></div>
+          <div class="hint" id="cb-empty-hint">No rounds yet — tap one above to get started.</div>
+
+          <div class="section-title">Rest Between Rounds</div>
+          <div class="stepper">
+            <button onclick="cbAdjustRest(-15)">−</button>
+            <div class="stepper-val" id="cb-rest-val">0:30<small>per rest</small></div>
+            <button onclick="cbAdjustRest(15)">+</button>
+          </div>
+
+          <div class="section-title">Callout Pace</div>
+          <div class="hint" style="text-align:left;padding:0 0 10px;">The callout timer starts <b>after</b> the combo finishes playing — if the combo is "one, two", the gap starts once "two" finishes, not before.</div>
+          <div class="pill-row" id="cb-pace-row"></div>
+
+          <div class="section-title">Review &amp; Create</div>
+          <div class="card" id="cb-summary">
+            <input type="text" id="cb-session-name" placeholder="Name this session (optional)" style="width:100%;margin-bottom:12px;">
+            <div class="profile-line"><span class="pl">Rounds</span><span id="cb-summary-rounds">0</span></div>
+            <div class="profile-line"><span class="pl">Total time</span><span id="cb-summary-time">0 min</span></div>
+            <div class="profile-line"><span class="pl">Callout pace</span><span id="cb-summary-pace">5.0s</span></div>
+          </div>
+          <button class="bigbtn gold" style="margin-top:10px;" onclick="createCustomBuildSession()">Create Session</button>
+        </div>
       </div>
     </div>
 
@@ -733,6 +860,16 @@
 </div>
 
 <script>
+function hideSplashScreen() {
+  const splash = document.getElementById('splash-screen');
+  if (splash) {
+    setTimeout(() => {
+      splash.classList.add('hidden');
+    }, 1800);
+  }
+}
+window.addEventListener('load', hideSplashScreen);
+
 /* AUDIO_MANIFEST:BEGIN (auto-generated by audio/gen_audio.py -- do not hand-edit) */
 const AUDIO_MANIFEST = {
   "chunks": {
@@ -1478,7 +1615,7 @@ function buildTplList(){
       const mins = Math.round(s.seq.reduce((a,r)=>a+r.work+r.rest,0)/60);
       const segs = s.seq.map(r=>`<div style="flex:${r.work};background:${ROUND_TYPES[r.type].color}"></div>`).join('');
       return `<div class="tpl-card" onclick="startSaved('${s.id}')">
-        <div class="tpl-top"><div class="tpl-name">${s.name}</div><div style="display:flex;align-items:center;gap:8px;"><div class="tpl-dur">~${mins} min</div><button class="del-btn" onclick="event.stopPropagation();deleteSaved('${s.id}')">×</button></div></div>
+        <div class="tpl-top"><div class="tpl-name">${s.name}${s.source==='custom-builder'?' <span class="lock-tag">Custom</span>':''}</div><div style="display:flex;align-items:center;gap:8px;"><div class="tpl-dur">~${mins} min</div><button class="del-btn" onclick="event.stopPropagation();deleteSaved('${s.id}')">×</button></div></div>
         <div class="tpl-bar">${segs}</div>
         <div class="tpl-meta"><span><b>${s.seq.length}</b> rounds</span></div>
       </div>`;
@@ -2066,12 +2203,15 @@ function saveCustomAsSession(){
   promptSaveSession(seq, []);
 }
 
-/* ================= SMART BUILDER ================= */
-function buildSmartSession(){
-  const text = document.getElementById('smart-input').value.toLowerCase();
-  if(!text.trim()){ alert('Tell me a bit about what you need first.'); return; }
+/* ================= SMART BUILDER =================
+   parseSmartSession is pure (no DOM) on purpose -- it's the part worth unit
+   testing; buildSmartSession is just the DOM glue around it. Keep them in
+   sync: any new keyword/rule belongs in parseSmartSession. See
+   tests/smart-builder.test.js. */
+function parseSmartSession(text, smartDurFallback, historyArr){
+  text = text.toLowerCase();
   let minutesMatch = text.match(/(\d+)\s*(min|minute)/);
-  let targetMin = minutesMatch ? parseInt(minutesMatch[1]) : (smartDur || 30);
+  let targetMin = minutesMatch ? parseInt(minutesMatch[1]) : (smartDurFallback || 30);
   const isSore = /sore|light|easy|recover/.test(text);
   const isTechnical = /technical|technique|slow it down/.test(text);
   const isConditioning = /gas|condition|endur|tired|fatigue|stamina|cardio/.test(text);
@@ -2084,7 +2224,7 @@ function buildSmartSession(){
   const wantsPower = /power|hard|hit harder/.test(text);
   const wantsPressure = /pressure|walk.*down|aggress/.test(text);
   const fightCamp = /fight in|fight camp|upcoming fight|fight soon/.test(text);
-  const recent = history.slice(-3);
+  const recent = historyArr.slice(-3);
   const recentEndurance = recent.filter(h=>h.feel==='endurance').length >= 2;
   const recentTechnique = recent.filter(h=>h.feel==='technique').length >= 2;
   const baseWork = isSore||isTechnical ? 120 : 150;
@@ -2096,7 +2236,7 @@ function buildSmartSession(){
   const overload = recent.length>=3 && recent.every(x=>x.complete==='yes' && x.feel==='sharp');
   if(overload && !isSore) baseIntensity = Math.min(90, baseIntensity+6);
   // Read hardest round position from last 5 sessions to place conditioning block there
-  const hardPositions = history.slice(-5).map(h=>parseInt(h.hardest)).filter(n=>!isNaN(n));
+  const hardPositions = historyArr.slice(-5).map(h=>parseInt(h.hardest)).filter(n=>!isNaN(n));
   const avgHardest = hardPositions.length ? Math.round(hardPositions.reduce((a,b)=>a+b,0)/hardPositions.length) : null;
   let seqTypes = ['warmup'];
   if(wantsJab) seqTypes.push('jab','jab');
@@ -2137,9 +2277,126 @@ function buildSmartSession(){
       intensity,
       objectiveText: isCool ? 'Cool-down. Half speed, light hands, deep breaths.' : getVariantObj(t, 0) };
   });
-  document.getElementById('smart-preview').innerHTML = '';
   const descNote = overload ? ' Progressive overload applied — you earned a harder one after three sharp sessions.' : '';
+  return { plan, overload, descNote, targetMin, isSore, isTechnical, isConditioning, lightConditioning };
+}
+function buildSmartSession(){
+  const text = document.getElementById('smart-input').value;
+  if(!text.trim()){ alert('Tell me a bit about what you need first.'); return; }
+  const { plan, descNote } = parseSmartSession(text, smartDur, history);
+  document.getElementById('smart-preview').innerHTML = '';
   openSessionDetail({ name:'Smart Session', desc:'Built from your description — pick a difficulty and adjust anything below before you start.'+descNote, seq:plan, goals:[] });
+}
+
+function setSmartSubTab(tab){
+  document.getElementById('st-ai').classList.toggle('active', tab==='ai');
+  document.getElementById('st-custom').classList.toggle('active', tab==='custom');
+  document.getElementById('smart-ai-panel').style.display = tab==='ai' ? '' : 'none';
+  document.getElementById('smart-custom-panel').style.display = tab==='custom' ? '' : 'none';
+  if(tab==='custom') renderCustomBuild();
+}
+
+/* ================= CUSTOM BUILDER =================
+   Round-by-round session assembly from the real ROUND_TYPES (not a separate
+   combo database) so everything built here plays through the exact same
+   audio/pace engine as templates and the AI builder. */
+let cbRounds = [];      // [{type, work}], in play order, duplicates allowed
+let cbRestSec = 30;     // applied uniformly between every round
+let cbPaceSec = 5;      // -> paceOverrideSec on every round (see computeGapAfterSpeech)
+const CB_PACE_OPTS = [{v:1,l:'Fast'},{v:2,l:'Quick'},{v:5,l:'Normal'},{v:8,l:'Slower'},{v:10,l:'Slow'}];
+
+function renderCustomBuild(){
+  document.getElementById('cb-round-grid').innerHTML = Object.entries(ROUND_TYPES).map(([key,rt])=>
+    `<div class="cb-round-card" style="border-left-color:${rt.color}" onclick="cbAddRound('${key}')">
+      <div class="cbn">${rt.label}</div>
+      <div class="cbo">${rt.objective}</div>
+    </div>`).join('');
+
+  document.getElementById('cb-pace-row').innerHTML = CB_PACE_OPTS.map(o=>
+    `<div class="pill ${o.v===cbPaceSec?'active':''}" onclick="cbSetPace(${o.v})">${o.l}<small>${o.v}s</small></div>`).join('');
+
+  renderTime('cb-rest-val', cbRestSec, 'per rest');
+  renderCbRoundList();
+  renderCbSummary();
+}
+
+function renderCbRoundList(){
+  document.getElementById('cb-round-count').textContent = `(${cbRounds.length})`;
+  document.getElementById('cb-empty-hint').style.display = cbRounds.length ? 'none' : '';
+  document.getElementById('cb-round-list').innerHTML = cbRounds.map((r,i)=>{
+    const rt = ROUND_TYPES[r.type];
+    const mm = Math.floor(r.work/60), ss = (r.work%60).toString().padStart(2,'0');
+    return `<div class="cb-round-row">
+      <div class="cb-round-row-top">
+        <span class="bdot" style="background:${rt.color}"></span>
+        <span class="cbrn">${i+1}. ${rt.label}</span>
+        <button class="del-btn" onclick="cbRemoveRound(${i})">×</button>
+      </div>
+      <div class="cb-round-row-controls">
+        <div class="stepper">
+          <button onclick="cbAdjustWork(${i},-15)">−</button>
+          <div class="stepper-val">${mm}:${ss}<small>duration</small></div>
+          <button onclick="cbAdjustWork(${i},15)">+</button>
+        </div>
+        <div class="cb-move">
+          <button class="cb-move-btn" onclick="cbMoveRound(${i},-1)" ${i===0?'disabled':''}>↑</button>
+          <button class="cb-move-btn" onclick="cbMoveRound(${i},1)" ${i===cbRounds.length-1?'disabled':''}>↓</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderCbSummary(){
+  const totalSec = cbRounds.reduce((a,r)=>a+r.work,0) + Math.max(0,cbRounds.length-1)*cbRestSec;
+  document.getElementById('cb-summary-rounds').textContent = cbRounds.length;
+  document.getElementById('cb-summary-time').textContent = Math.round(totalSec/60)+' min';
+  document.getElementById('cb-summary-pace').textContent = cbPaceSec.toFixed(1)+'s';
+}
+
+function cbAddRound(type){ cbRounds.push({type, work:120}); renderCbRoundList(); renderCbSummary(); }
+function cbRemoveRound(i){ cbRounds.splice(i,1); renderCbRoundList(); renderCbSummary(); }
+function cbMoveRound(i,dir){
+  const j = i+dir;
+  if(j<0 || j>=cbRounds.length) return;
+  [cbRounds[i], cbRounds[j]] = [cbRounds[j], cbRounds[i]];
+  renderCbRoundList(); renderCbSummary();
+}
+function cbAdjustWork(i,delta){
+  cbRounds[i].work = Math.max(20, Math.min(600, cbRounds[i].work+delta));
+  renderCbRoundList(); renderCbSummary();
+}
+function cbAdjustRest(delta){
+  cbRestSec = Math.max(0, Math.min(180, cbRestSec+delta));
+  renderTime('cb-rest-val', cbRestSec, 'per rest');
+  renderCbSummary();
+}
+function cbSetPace(sec){ cbPaceSec = sec; renderCustomBuild(); }
+
+function createCustomBuildSession(){
+  if(!cbRounds.length){ alert('Add at least one round first.'); return; }
+  const seq = cbRounds.map((r,i)=>({
+    type: r.type, work: r.work,
+    rest: i===cbRounds.length-1 ? 0 : cbRestSec,
+    intensity: 70
+  }));
+  const nameInput = document.getElementById('cb-session-name');
+  const name = (nameInput.value.trim()) || `Custom ${cbRounds.length}-Round`;
+  const rec = { id:'s'+Date.now(), name, seq, goals:[], source:'custom-builder' };
+  savedSessions.push(rec);
+  saveSaved(savedSessions);
+  buildTplList();
+
+  openSessionDetail({ name:rec.name, desc:'Built with the Custom Builder.', seq:rec.seq, goals:[], savedId:rec.id });
+  // openSessionDetail always resets pace to 'normal' -- reapply the exact
+  // callout pace chosen above so it isn't silently lost.
+  detailPaceMode = 'custom';
+  detailPaceCustomSec = cbPaceSec;
+  renderDetailControls();
+  renderDetailBreakdown();
+
+  cbRounds = []; cbRestSec = 30; cbPaceSec = 5;
+  nameInput.value = '';
 }
 
 /* ================= THEME ================= */
