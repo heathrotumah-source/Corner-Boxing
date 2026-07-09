@@ -1064,6 +1064,13 @@ let pendingChunkTimeout = null;
 
 function slugifyText(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
 
+/* User-typed text (session names, custom combo names, profile name) gets
+   rendered via innerHTML in a few places -- escape it there so a name like
+   "<img src=x onerror=...>" is displayed as literal text, not executed. */
+function escapeHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 function loadAudioBuffer(url){
   if(audioBufferCache.has(url)) return Promise.resolve(audioBufferCache.get(url));
   if(audioLoadPromises.has(url)) return audioLoadPromises.get(url);
@@ -1531,17 +1538,23 @@ let selectedVoiceURI = localStorage.getItem('corner_voice_uri') || null;
 /* Novelty / joke system voices (macOS "Grandma", "Zarvox", "Bad News" etc.) get filtered out
    entirely — they clutter the list and nobody wants their coach to sound like a cartoon. */
 const NOVELTY_VOICE_RE = /\b(albert|bad news|bahh|bells|boing|bubbles|cellos|good news|grandma|grandpa|hysterical|jester|junior|organ|pipe organ|princess|ralph|superstar|trinoids|whisper|zarvox|wobble|deranged|rocko|shelley|sandy|eddy|reed|flo)\b/i;
+let voiceList = []; // last-rendered voice list, indexed by selectVoiceAt (see below)
 function populateVoices(){
   const voices = window.speechSynthesis.getVoices().filter(v=>v.lang.startsWith('en') && !NOVELTY_VOICE_RE.test(v.name));
   const list = voices.length ? voices : window.speechSynthesis.getVoices().filter(v=>!NOVELTY_VOICE_RE.test(v.name));
+  voiceList = list;
   const row = document.getElementById('voice-row');
   if(!list.length){ row.innerHTML = '<div class="hint">Voices loading… try again in a second.</div>'; return; }
   if(!selectedVoiceURI && list.length){
     const pref = list.find(v=>/samantha|karen|daniel|moira|google uk english (male|female)|google us english/i.test(v.name));
     selectedVoiceURI = (pref||list[0]).voiceURI;
   }
-  row.innerHTML = list.map(v=>`<div class="voice-pill ${v.voiceURI===selectedVoiceURI?'active':''}" onclick="selectVoice('${v.voiceURI.replace(/'/g,"\\'")}')">${v.name.replace('Microsoft ','').replace('Google ','')}</div>`).join('');
+  /* Index into voiceList rather than interpolating the (browser/OS-supplied)
+     voiceURI string into the onclick attribute -- keeps every inline handler
+     argument a plain number, so there's never a string to escape. */
+  row.innerHTML = list.map((v,i)=>`<div class="voice-pill ${v.voiceURI===selectedVoiceURI?'active':''}" onclick="selectVoiceAt(${i})">${escapeHtml(v.name.replace('Microsoft ','').replace('Google ',''))}</div>`).join('');
 }
+function selectVoiceAt(i){ const v = voiceList[i]; if(v) selectVoice(v.voiceURI); }
 function selectVoice(uri){ selectedVoiceURI = uri; localStorage.setItem('corner_voice_uri', uri); populateVoices(); }
 function setRate(r){
   speechRate = r;
@@ -1615,7 +1628,7 @@ function buildTplList(){
       const mins = Math.round(s.seq.reduce((a,r)=>a+r.work+r.rest,0)/60);
       const segs = s.seq.map(r=>`<div style="flex:${r.work};background:${ROUND_TYPES[r.type].color}"></div>`).join('');
       return `<div class="tpl-card" onclick="startSaved('${s.id}')">
-        <div class="tpl-top"><div class="tpl-name">${s.name}${s.source==='custom-builder'?' <span class="lock-tag">Custom</span>':''}</div><div style="display:flex;align-items:center;gap:8px;"><div class="tpl-dur">~${mins} min</div><button class="del-btn" onclick="event.stopPropagation();deleteSaved('${s.id}')">×</button></div></div>
+        <div class="tpl-top"><div class="tpl-name">${escapeHtml(s.name)}${s.source==='custom-builder'?' <span class="lock-tag">Custom</span>':''}</div><div style="display:flex;align-items:center;gap:8px;"><div class="tpl-dur">~${mins} min</div><button class="del-btn" onclick="event.stopPropagation();deleteSaved('${s.id}')">×</button></div></div>
         <div class="tpl-bar">${segs}</div>
         <div class="tpl-meta"><span><b>${s.seq.length}</b> rounds</span></div>
       </div>`;
@@ -1795,15 +1808,23 @@ function toggleFav(n, btn){
   localStorage.setItem('corner_favs', JSON.stringify([...favCombos]));
   btn.classList.toggle('on', favCombos.has(n));
 }
+/* Index-based lookup instead of interpolating the (user-editable) combo
+   string into the onclick attribute -- avoids having to reason about escaping
+   the same value for both JS-string and HTML-attribute context at once. */
+function toggleFavAt(level, i, btn){
+  const c = poolFor(level)[i];
+  if(!c) return;
+  toggleFav(c.n, btn);
+}
 function renderComboList(){
   const pool = poolFor(libLevel);
   const customStart = pool.length - (customCombos[libLevel]||[]).length;
   let html = pool.map((c,i)=>`
     <div class="combo-row">
-      <div class="left"><div class="num">${c.n}</div><div class="nm">${c.name||''}</div>
+      <div class="left"><div class="num">${escapeHtml(c.n)}</div><div class="nm">${escapeHtml(c.name||'')}</div>
       <div class="tags">${(c.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}${c.unlock?'<span class="lock-tag">unlocked</span>':''}</div></div>
       <div style="display:flex;align-items:center;">
-        <button class="fav-btn ${favCombos.has(c.n)?'on':''}" onclick="toggleFav('${c.n.replace(/'/g,"\\'")}',this)">★</button>
+        <button class="fav-btn ${favCombos.has(c.n)?'on':''}" onclick="toggleFavAt('${libLevel}', ${i}, this)">★</button>
         ${c.custom?`<button class="del-btn" onclick="deleteCustom('${libLevel}', ${i-customStart})">×</button>`:''}
       </div>
     </div>`).join('');
@@ -1939,7 +1960,7 @@ function renderProgress(){
     list.innerHTML = history.slice().reverse().slice(0,20).map(h=>{
       const d = new Date(h.date);
       const dateStr = d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
-      return `<div class="history-row"><div class="htop"><span>${h.label}</span><span>${dateStr}</span></div>
+      return `<div class="history-row"><div class="htop"><span>${escapeHtml(h.label)}</span><span>${dateStr}</span></div>
         <div class="hsub">${h.rounds} rounds · ${Math.round(h.totalSec/60)} min · ~${h.punches} punches${h.feel?' · '+h.feel:''}</div></div>`;
     }).join('');
   }
@@ -2425,7 +2446,7 @@ function saveProfile(){
 }
 function applyProfileGreeting(){
   const g=document.querySelector('.greeting');
-  if(g && profile.name) g.innerHTML = `${profile.name.split(' ')[0]}, let's <span>train</span>.`;
+  if(g && profile.name) g.innerHTML = `${escapeHtml(profile.name.split(' ')[0])}, let's <span>train</span>.`;
 }
 
 /* ================= SETTINGS / PROFILE OVERLAYS ================= */
