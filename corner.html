@@ -2677,39 +2677,175 @@ function getComboCategories(n){
   if(/slip|\broll\b|parry|\bduck\b|pull back|\bblock\b/.test(s)) cats.push('defense');
   return cats;
 }
-function getFreqMult(freq){ return freq==='high'?3:freq==='low'?0.35:1; }
-function pickComboFromPool(pool){
-  const CWEIGHTS = {1:6, 2:4, 3:2};
-  function complexity(n){
-    const s=n.toLowerCase();
-    const d=/slip|\broll\b|parry|\bduck\b|pull back|\bblock\b/.test(s);
-    const fw=/\bstep\b|\bpivot\b|angle|circle/.test(s);
-    const fe=/feint/.test(s);
-    const p=(n.match(/[1-6]/g)||[]).length;
-    if(d&&(fw||p>=4)) return 3;
-    if(d||fe||(fw&&p>=3)) return 2;
-    return 1;
+/* ── BAG-BASED PICKER (replaces roulette/rejection sampling) ──
+   Guarantees full pool coverage before repeats, punch-level fairness via
+   deficit weighting toward PUNCH_TARGETS, cross-session variety via
+   comboUsage in localStorage, and deterministic constraint-relaxation
+   fallback passes (never falls back to "random easy combo"). */
+const PUNCH_TARGETS = {
+  default:  {1:0.28, 2:0.24, 3:0.20, 4:0.12, 5:0.08, 6:0.08},
+  power:    {1:0.18, 2:0.30, 3:0.26, 4:0.10, 5:0.08, 6:0.08},
+  speed:    {1:0.38, 2:0.28, 3:0.16, 4:0.08, 5:0.05, 6:0.05},
+  body:     {1:0.20, 2:0.18, 3:0.16, 4:0.10, 5:0.18, 6:0.18},
+  uppercuts:{1:0.20, 2:0.20, 3:0.14, 4:0.14, 5:0.16, 6:0.16},
+};
+function punchesIn(nums){ return (nums.match(/[1-6]/g)||[]).map(Number); }
+
+function loadComboUsage(){
+  try { return JSON.parse(localStorage.getItem('comboUsage')||'{}'); }
+  catch(e){ return {}; }
+}
+function bumpComboUsage(n){
+  const u = loadComboUsage();
+  u[n] = (u[n]||0) + 1;
+  localStorage.setItem('comboUsage', JSON.stringify(u));
+}
+
+function comboComplexity(n){
+  const s=n.toLowerCase();
+  const d=/slip|\broll\b|parry|\bduck\b|pull back|\bblock\b/.test(s);
+  const fw=/\bstep\b|\bpivot\b|angle|circle/.test(s);
+  const fe=/feint/.test(s);
+  const p=punchesIn(n).length;
+  if(d&&(fw||p>=4)) return 3;
+  if(d||fe||(fw&&p>=3)) return 2;
+  return 1;
+}
+
+/* Copies per combo = base weight (complexity + freq + fav) × punch-deficit
+   boost × inverse historical usage, then Fisher-Yates shuffled. */
+function buildBag(pool, focusKey){
+  const targets = PUNCH_TARGETS[focusKey] || PUNCH_TARGETS.default;
+  const counts  = state.punchCounts || {};
+  const total   = Object.values(counts).reduce((a,b)=>a+b,0) || 1;
+  const usage   = loadComboUsage();
+  const usageVals = pool.map(c=>usage[c.n]||0);
+  const medUse  = usageVals.slice().sort((a,b)=>a-b)[Math.floor(usageVals.length/2)] || 0;
+
+  const bag = [];
+  for(const c of pool){
+    let w = ({1:3, 2:2, 3:1})[comboComplexity(c.n)] || 2;
+    w *= (c.freq==='high'?1.5 : c.freq==='low'?0.5 : 1);
+    if (favCombos.has(c.n)) w *= 1.5;
+
+    let deficitBoost = 1;
+    for(const p of new Set(punchesIn(c.n))){
+      const target = targets[p] ?? 0.1;
+      const actual = (counts[p]||0) / total;
+      if (actual < target) deficitBoost += (target - actual) * 4;
+    }
+    w *= deficitBoost;
+
+    const u = usage[c.n]||0;
+    w *= (medUse + 2) / (u + 2);
+
+    const copies = Math.max(1, Math.min(5, Math.round(w)));
+    for(let i=0;i<copies;i++) bag.push(c);
+  }
+
+  for(let i=bag.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [bag[i],bag[j]] = [bag[j],bag[i]];
+  }
+  return bag;
+}
+
+/* Pass 0: all constraints. Pass 1: drop session-used. Pass 2: drop category
+   caps. Pass 3: only forbid immediate repeat. Deterministic relaxation. */
+function pickComboBag(pool, focusKey){
+  if(!state._bag || !state._bag.length || state._bagFocus!==focusKey){
+    state._bag = buildBag(pool, focusKey);
+    state._bagFocus = focusKey;
+    if(state._lastDealt && state._bag.length>1 && state._bag[0].n===state._lastDealt){
+      const j = state._bag.findIndex(c=>c.n!==state._lastDealt);
+      if(j>0) [state._bag[0],state._bag[j]] = [state._bag[j],state._bag[0]];
+    }
   }
   const r = state._pickRound || {};
   const caps = ROUND_CATEGORY_CAPS[r.type] || ROUND_CATEGORY_CAPS.default;
   const recent = (state.recentCombos||[]).slice(-2);
-  const used = state.usedCombosThisSession || new Set();
+  const used   = state.usedCombosThisSession || new Set();
   const catCount = state.roundCategoryCount || {};
-  const weighted = pool.map(c=>({...c, _w: CWEIGHTS[complexity(c.n)] * getFreqMult(c.freq||'normal') * (favCombos.has(c.n)?2:1)}));
-  for(let attempt=0; attempt<12; attempt++){
-    const total = weighted.reduce((a,c)=>a+c._w, 0);
-    let rnd = Math.random()*total; let cand = weighted[weighted.length-1];
-    for(const c of weighted){ rnd-=c._w; if(rnd<=0){cand=c;break;} }
-    if(recent.includes(cand.n)) continue;
-    if(used.has(cand.n) && pool.length > 5) continue;
-    const cats = getComboCategories(cand.n);
-    if(cats.some(cat=>(catCount[cat]||0) >= (caps[cat]??999))) continue;
-    return {nums:cand.n, name:cand.name, categories:cats};
+
+  const passes = [
+    c => !recent.includes(c.n) && !(used.has(c.n)&&pool.length>5) && capsOK(c),
+    c => !recent.includes(c.n) && capsOK(c),
+    c => !recent.includes(c.n),
+    c => c.n !== state._lastDealt,
+  ];
+  function capsOK(c){
+    return getComboCategories(c.n).every(cat=>(catCount[cat]||0) < (caps[cat]??999));
   }
-  const fb = pool.filter(c=>complexity(c.n)===1 && c.freq!=='low');
-  const pick = fb.length ? fb[Math.floor(Math.random()*fb.length)] : pool[Math.floor(Math.random()*pool.length)];
-  return {nums:pick.n, name:pick.name, categories:getComboCategories(pick.n)};
+
+  for(const pass of passes){
+    const idx = state._bag.findIndex(pass);
+    if(idx !== -1){
+      const cand = state._bag.splice(idx,1)[0];
+      state._bag = state._bag.filter(c=>c.n!==cand.n);
+      state._lastDealt = cand.n;
+      recordPunches(cand.n);
+      bumpComboUsage(cand.n);
+      return {nums:cand.n, name:cand.name, categories:getComboCategories(cand.n)};
+    }
+  }
+  state._bag = null;
+  return pickComboBag(pool, focusKey);
 }
+
+function recordPunches(nums){
+  if(!state.punchCounts) state.punchCounts = {};
+  for(const p of punchesIn(nums)) state.punchCounts[p]=(state.punchCounts[p]||0)+1;
+}
+
+/* Optional drill-mode hook: for a round that wants deliberate pinned
+   repeats (e.g. a technical/drill focus), call this instead of
+   pickComboBag() directly, passing the combos that should repeat on
+   purpose. Not wired to any round type yet -- available for future use. */
+function pickDrillOrBag(pool, focusKey, drillCombos, every=3){
+  state._dealCount = (state._dealCount||0)+1;
+  if(drillCombos && drillCombos.length && state._dealCount % every === 0){
+    const d = drillCombos[(state._drillIdx=(state._drillIdx||0)+1) % drillCombos.length];
+    recordPunches(d.n);
+    return {nums:d.n, name:d.name, categories:getComboCategories(d.n), drill:true};
+  }
+  return pickComboBag(pool, focusKey);
+}
+
+/* Dev-only fairness check -- run in the browser console:
+   simulateFairness('power', poolFor('advanced'), 5000) */
+function simulateFairness(focusKey, pool, deals=5000){
+  const saved = {bag:state._bag, focus:state._bagFocus, pc:state.punchCounts,
+                 last:state._lastDealt, rc:state.recentCombos, used:state.usedCombosThisSession};
+  Object.assign(state,{_bag:null,punchCounts:{},recentCombos:[],usedCombosThisSession:new Set()});
+  const comboCount={}, lastSeen={};
+  let maxGap=0, maxGapCombo='';
+  for(let i=0;i<deals;i++){
+    const c = pickComboBag(pool, focusKey);
+    comboCount[c.nums]=(comboCount[c.nums]||0)+1;
+    if(lastSeen[c.nums]!==undefined){
+      const g=i-lastSeen[c.nums];
+      if(g>maxGap){maxGap=g;maxGapCombo=c.nums;}
+    }
+    lastSeen[c.nums]=i;
+    if(i%20===19) state.usedCombosThisSession=new Set();
+  }
+  const targets = PUNCH_TARGETS[focusKey]||PUNCH_TARGETS.default;
+  const total = Object.values(state.punchCounts).reduce((a,b)=>a+b,0);
+  console.log('=== PUNCH DISTRIBUTION vs TARGET ===');
+  for(const p of [1,2,3,4,5,6]){
+    const actual=((state.punchCounts[p]||0)/total*100).toFixed(1);
+    const target=((targets[p]||0)*100).toFixed(1);
+    const flag = Math.abs(actual-target)>5 ? '  ⚠ DRIFT' : '';
+    console.log(`punch ${p}: ${actual}% (target ${target}%)${flag}`);
+  }
+  const counts=Object.values(comboCount);
+  console.log(`=== COMBO COVERAGE === ${Object.keys(comboCount).length}/${pool.length} combos used`);
+  console.log(`min/max combo count: ${Math.min(...counts)}/${Math.max(...counts)}`);
+  console.log(`max gap between repeats of same combo: ${maxGap} deals (${maxGapCombo})`);
+  Object.assign(state,{_bag:saved.bag,_bagFocus:saved.focus,punchCounts:saved.pc,
+                       _lastDealt:saved.last,recentCombos:saved.rc,usedCombosThisSession:saved.used});
+}
+
 function trackCombo(combo){
   if(!state.recentCombos) state.recentCombos=[];
   state.recentCombos.push(combo.nums);
@@ -3059,7 +3195,8 @@ function resumeSession(){
     plan: snap.plan.map(r=>({...r, pool:getPoolForRound(r.level||'beginner', r.type)})),
     roundIndex: snap.roundIndex, phase:'work', paused:false, currentCombo:null,
     label: snap.label, callCountInRound:0,
-    usedCombosThisSession:new Set(snap.used||[]), recentCombos:[], roundCategoryCount:{}
+    usedCombosThisSession:new Set(snap.used||[]), recentCombos:[], roundCategoryCount:{},
+    _bag:null, _bagFocus:null, _lastDealt:null, punchCounts:{}, _dealCount:0
   };
   unlockAudio(); startKeepAlive(); requestWakeLock();
   document.getElementById('round-total').textContent = state.plan.length;
@@ -3102,6 +3239,8 @@ function launchPlan(){
   state.usedCombosThisSession = new Set(); // session-level combo tracking
   state.recentCombos = [];
   state.roundCategoryCount = {};
+  state._bag = null; state._bagFocus = null; state._lastDealt = null; // bag picker resets per session
+  state.punchCounts = {}; state._dealCount = 0;
   document.getElementById('round-total').textContent = state.plan.length;
   buildDots(state.plan.length);
   switchView('view-workout');
@@ -3154,8 +3293,8 @@ function beginPreRoll(){
 }
 
 function nextComboForRound(r){
-  state._pickRound = r; // pass round context to pickComboFromPool
-  const combo = pickComboFromPool(r.pool);
+  state._pickRound = r; // pass round context to pickComboBag
+  const combo = pickComboBag(r.pool, r.type);
   trackCombo(combo);
   return combo;
 }
