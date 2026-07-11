@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root{
     /* ── Corner brand ──
@@ -444,6 +445,37 @@
     *, *::before, *::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important;}
   }
 
+  /* ── AUTH GATE ── shown by default (not toggled on after an async check)
+     so there is never a frame where the app underneath is visible/usable
+     before we actually know whether there's a valid session. */
+  #auth-gate{position:fixed;inset:0;background:var(--bg);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+  #auth-gate.hidden{display:none;}
+  .auth-wrap{width:100%;max-width:360px;}
+  .auth-logo{display:flex;align-items:center;justify-content:center;gap:2px;margin-bottom:28px;}
+  .auth-loading{color:var(--grey);font-size:13px;text-align:center;}
+  .auth-tabs{display:flex;gap:8px;margin-bottom:16px;}
+  .auth-tab{flex:1;text-align:center;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card2);font-size:13.5px;font-weight:600;cursor:pointer;color:var(--grey);}
+  .auth-tab.active{border-color:var(--blue);color:var(--blue);}
+  .auth-field{margin-bottom:12px;}
+  .auth-pw-wrap{position:relative;}
+  .auth-pw-wrap input{padding-right:44px;}
+  .auth-pw-toggle{position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--grey);cursor:pointer;padding:8px;min-height:auto;line-height:1;display:flex;align-items:center;}
+  .auth-pw-toggle:hover{background:none;color:var(--blue);}
+  .auth-pw-toggle:active{background:none;transform:translateY(-50%) scale(.9);}
+  .auth-field label{display:block;font-size:11.5px;color:var(--grey);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;}
+  .auth-field input{width:100%;}
+  .auth-error{background:rgba(229,72,77,.12);border:1px solid rgba(229,72,77,.4);color:var(--red);border-radius:10px;padding:10px 12px;font-size:12.5px;margin-bottom:12px;display:none;}
+  .auth-error.show{display:block;}
+  .auth-submit{width:100%;margin-top:4px;}
+  .auth-forgot{text-align:center;margin-top:14px;font-size:12px;color:var(--grey);cursor:pointer;text-decoration:underline;}
+  .auth-forgot:hover{color:var(--blue);}
+  .auth-note{text-align:center;margin-top:16px;font-size:11.5px;color:var(--grey);line-height:1.5;}
+
+  #import-overlay{position:fixed;inset:0;background:rgba(8,11,20,.88);backdrop-filter:blur(6px);z-index:520;display:none;align-items:center;justify-content:center;padding:24px;}
+  #import-overlay.show{display:flex;}
+  #import-overlay .card{max-width:340px;text-align:center;}
+  #import-overlay button{width:100%;margin-top:10px;}
+
 </style>
 </head>
 <body>
@@ -460,6 +492,63 @@
       <rect x="4" y="4" width="28" height="28" rx="9" fill="none" stroke="#D4FF3F" stroke-width="6"/>
     </svg>
     <span>RNER</span>
+  </div>
+</div>
+
+<!-- AUTH GATE -->
+<div id="auth-gate">
+  <div class="auth-wrap">
+    <div class="auth-logo">
+      <span class="wordmark"><span>C</span><svg class="wordmark-o" width="26" height="26" viewBox="0 0 36 36" aria-hidden="true"><rect x="4" y="4" width="28" height="28" rx="9" fill="none" stroke="#D4FF3F" stroke-width="6"/></svg><span>RNER</span></span>
+    </div>
+
+    <div id="auth-loading" class="auth-loading">Checking your session…</div>
+
+    <div id="auth-form" style="display:none;">
+      <div id="auth-error" class="auth-error"></div>
+
+      <div id="auth-credentials">
+        <div class="auth-tabs">
+          <div class="auth-tab active" id="auth-tab-login" onclick="setAuthMode('login')">Log In</div>
+          <div class="auth-tab" id="auth-tab-signup" onclick="setAuthMode('signup')">Sign Up</div>
+        </div>
+        <div class="auth-field">
+          <label for="auth-email">Email</label>
+          <input type="email" id="auth-email" autocomplete="email" placeholder="you@example.com">
+        </div>
+        <div class="auth-field">
+          <label for="auth-password">Password</label>
+          <div class="auth-pw-wrap">
+            <input type="password" id="auth-password" autocomplete="current-password" placeholder="At least 8 characters" onkeydown="if(event.key==='Enter') submitAuthForm()">
+            <button type="button" class="auth-pw-toggle" onclick="togglePasswordVisibility('auth-password', this)" aria-label="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+        </div>
+        <button class="bigbtn auth-submit" id="auth-submit-btn" onclick="submitAuthForm()">Log In</button>
+        <div class="auth-forgot" onclick="forgotPassword()">Forgot your password?</div>
+        <div class="auth-note">Corner requires an account so your subscription and training history follow you across devices.</div>
+      </div>
+
+      <div id="auth-otp-step" style="display:none;">
+        <div class="auth-note" style="margin-top:0;margin-bottom:16px;">We emailed a 6-digit code to <span id="auth-otp-email" style="color:var(--text);font-weight:600;"></span>.</div>
+        <div class="auth-field">
+          <label for="auth-otp-code">Confirmation code</label>
+          <input type="text" id="auth-otp-code" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code" onkeydown="if(event.key==='Enter') confirmOtp()">
+        </div>
+        <button class="bigbtn auth-submit" id="auth-otp-submit-btn" onclick="confirmOtp()">Confirm Code</button>
+        <div class="auth-forgot" onclick="resendOtp()">Resend code</div>
+        <div class="auth-forgot" onclick="backToCredentials()">Wrong email? Go back</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT LOCAL DATA PROMPT -->
+<div id="import-overlay">
+  <div class="card">
+    <div style="font-size:18px;font-weight:800;margin-bottom:6px;">Found training data on this device</div>
+    <div style="font-size:13px;color:var(--grey);margin-bottom:4px;">We found workout history, favorites, or custom combos already on this device. Import it into your new account?</div>
+    <button class="bigbtn" onclick="importLocalData(true)">Import My Data</button>
+    <button class="bigbtn secondary" onclick="importLocalData(false)">Start Fresh</button>
   </div>
 </div>
 
@@ -548,6 +637,7 @@
 <div class="card">
   <button class="bigbtn secondary" onclick="exportCSV()">📤 Export History (CSV)</button>
   <button class="bigbtn secondary" style="margin-top:10px;" onclick="openPrivacy()">🔒 Privacy Policy</button>
+  <button class="bigbtn secondary" style="margin-top:10px;color:var(--red);" onclick="logOut()">🚪 Log Out</button>
 </div>
 </div>
 </div>
@@ -579,28 +669,39 @@
 <div class="ref-close"><button onclick="closePrivacy()">✕ Close</button></div>
 <div style="font-size:22px;font-weight:800;margin-bottom:4px;">Privacy Policy</div>
 <div class="card" style="margin-top:14px;">
-  <p><strong>Data collection</strong></p>
-  <p class="text-secondary">Corner collects no personal data and has no account or sign-in. Your session history, streaks, XP, favorites, saved sessions, and settings are stored only in this browser, on this device.</p>
+  <p><strong>Account required</strong></p>
+  <p class="text-secondary">Corner requires an account (email + password) so your subscription and training history follow you across devices. Your password itself is never visible to us — it's handled entirely by our authentication provider, Supabase, which stores it securely hashed and never as plain text.</p>
 
-  <p><strong>What's stored locally</strong></p>
+  <p><strong>What's stored on our server</strong></p>
   <ul>
+    <li>Your account email and profile (name, skill level, goal)</li>
     <li>Your training session history and combo picks</li>
-    <li>Your XP, streak, and badge progress</li>
-    <li>Saved and custom-built sessions</li>
-    <li>App settings — voice, coach style, theme, profile</li>
+    <li>Favorites, and saved/custom-built sessions</li>
+    <li>Your subscription status (active/canceled, monthly or yearly) — billing itself is handled by Stripe, see below</li>
+  </ul>
+  <p class="text-secondary">This data lives in a Postgres database on Supabase, protected by Row Level Security policies that restrict every query to your own account only — not just at the app level, but enforced by the database itself.</p>
+
+  <p><strong>What stays on your device only</strong></p>
+  <ul>
+    <li>Appearance (dark/light theme), coach style, speech rate</li>
+    <li>Whether you've seen the onboarding screens</li>
+    <li>A short-term snapshot used only to resume a workout that was interrupted mid-round</li>
   </ul>
 
+  <p><strong>Payment details</strong></p>
+  <p class="text-secondary">Subscription payments are processed by Stripe. Corner never sees or stores your card number — Stripe's own hosted checkout handles that, and we only ever receive your subscription status back.</p>
+
   <p><strong>Data sharing</strong></p>
-  <p class="text-secondary">None of the above ever leaves your device. Nothing is sent to us or sold to anyone — there's no server for it to go to.</p>
+  <p class="text-secondary">Your data is shared with exactly two service providers who make the app function: Supabase (hosting your account and training data) and Stripe (processing payments). Neither is sold or shared with anyone else, and neither uses your data for advertising.</p>
 
   <p><strong>Voice audio</strong></p>
   <p class="text-secondary">Combo callouts and coach lines are pre-recorded audio files bundled with the app. No text or personal data is sent to any voice or AI service while you train — if your device's built-in text-to-speech is used as a fallback, that's handled entirely by your browser/OS, the same as any other app using system speech.</p>
 
   <p><strong>Third-party requests</strong></p>
-  <p class="text-secondary">This page loads its fonts from Google Fonts, which — like any web font — means your browser makes a request to Google's servers for the font files. No personal or training data is included in that request.</p>
+  <p class="text-secondary">This page loads its fonts from Google Fonts, meaning your browser requests those font files from Google's servers. No personal or training data is included in that request.</p>
 
   <p><strong>Deletion</strong></p>
-  <p class="text-secondary">Clearing your browser's site data for this page (or uninstalling it, if added to your home screen) removes everything listed above. You can also export your history as a CSV any time from Settings before doing so.</p>
+  <p class="text-secondary">You can export your history as a CSV any time from Settings. To delete your account and all associated data, contact us and we'll remove it from Supabase and cancel any active Stripe subscription — self-serve account deletion is on the way.</p>
 </div>
 </div>
 </div>
@@ -956,6 +1057,318 @@
 </div>
 
 <script>
+/* ================= SUPABASE CONFIG =================
+   Fill these in once you've created a Supabase project (Settings > API in
+   the Supabase dashboard gives you both values). The anon key is *meant* to
+   be public -- it only grants access constrained entirely by the Row Level
+   Security policies in supabase/migrations/0001_init.sql, it is not a secret
+   the way a service-role key or a Stripe secret key is. Never put those
+   other kinds of keys here or anywhere in this file -- they belong only in
+   Supabase Edge Function environment variables (server-side). */
+const SUPABASE_URL = 'https://neucsynxpjsqhsyzgrcf.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ldWNzeW54cGpzcWhzeXpncmNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM2MTkyNjEsImV4cCI6MjA5OTE5NTI2MX0.qsm1NHe7EUbY7n7tMu68_sUqAY-56cUH63NRU2QipVI';
+const sb = (SUPABASE_URL.startsWith('YOUR_') || !window.supabase)
+  ? null
+  : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+if(!sb) console.warn('Supabase is not configured yet -- set SUPABASE_URL/SUPABASE_ANON_KEY near the top of the script.');
+
+/* ================= AUTH =================
+   Corner requires an account for everyone -- #auth-gate is shown by default
+   (see its CSS) and only ever hidden once we've positively confirmed a valid
+   Supabase session, so there's no frame where the app underneath is usable
+   before we know the answer. checkLocalDataImport()/reloadAllUserData() are
+   implemented further down (first-login import + the Supabase-backed data
+   layer) but referenced here -- function declarations are hoisted, so this
+   works regardless of source order. */
+let authMode = 'login';
+let currentUser = null;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function setAuthMode(mode){
+  authMode = mode;
+  document.getElementById('auth-tab-login').classList.toggle('active', mode==='login');
+  document.getElementById('auth-tab-signup').classList.toggle('active', mode==='signup');
+  document.getElementById('auth-submit-btn').textContent = mode==='login' ? 'Log In' : 'Create Account';
+  document.getElementById('auth-password').autocomplete = mode==='login' ? 'current-password' : 'new-password';
+  clearAuthError();
+}
+const EYE_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.6 21.6 0 0 1 5.06-6.06M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a21.6 21.6 0 0 1-3.22 4.47M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function togglePasswordVisibility(inputId, btn){
+  const input = document.getElementById(inputId);
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btn.innerHTML = showing ? EYE_ICON : EYE_OFF_ICON;
+  btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+}
+function showAuthError(msg){
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function clearAuthError(){
+  const el = document.getElementById('auth-error');
+  el.textContent = '';
+  el.classList.remove('show');
+}
+let pendingAuthEmail = null;
+let pendingAuthPassword = null;
+
+async function submitAuthForm(){
+  if(!sb){ showAuthError('App is not connected to a backend yet.'); return; }
+  clearAuthError();
+  const email = document.getElementById('auth-email').value.trim().toLowerCase();
+  const password = document.getElementById('auth-password').value;
+  if(!EMAIL_RE.test(email)){ showAuthError('Enter a valid email address.'); return; }
+  if(password.length < 8){ showAuthError('Password must be at least 8 characters.'); return; }
+  const btn = document.getElementById('auth-submit-btn');
+  btn.disabled = true;
+  try{
+    if(authMode === 'login'){
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if(error) throw error;
+      await onAuthSuccess();
+    } else {
+      const { error } = await sb.auth.signUp({ email, password });
+      if(error) throw error;
+      pendingAuthEmail = email;
+      pendingAuthPassword = password;
+      showOtpStep(email);
+    }
+  } catch(e){
+    showAuthError(e.message || 'Something went wrong -- try again.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* Code-based signup confirmation instead of an emailed link -- avoids
+   depending on a correctly-configured Site URL/redirect entirely, and reads
+   better on mobile than clicking a link out to a browser. Requires the
+   "Confirm signup" template in Supabase (Authentication > Email Templates)
+   to display {{ .Token }} -- see the note left for the human maintainer. */
+function showOtpStep(email){
+  document.getElementById('auth-credentials').style.display = 'none';
+  document.getElementById('auth-otp-step').style.display = 'block';
+  document.getElementById('auth-otp-email').textContent = email;
+  clearAuthError();
+}
+function backToCredentials(){
+  document.getElementById('auth-otp-step').style.display = 'none';
+  document.getElementById('auth-credentials').style.display = 'block';
+  clearAuthError();
+}
+async function confirmOtp(){
+  if(!sb || !pendingAuthEmail) return;
+  clearAuthError();
+  const code = document.getElementById('auth-otp-code').value.trim();
+  if(!/^\d{6}$/.test(code)){ showAuthError('Enter the 6-digit code from your email.'); return; }
+  const btn = document.getElementById('auth-otp-submit-btn');
+  btn.disabled = true;
+  try{
+    const { error } = await sb.auth.verifyOtp({ email: pendingAuthEmail, token: code, type: 'signup' });
+    if(error) throw error;
+    pendingAuthEmail = null; pendingAuthPassword = null;
+    await onAuthSuccess();
+  } catch(e){
+    showAuthError(e.message || 'That code did not work -- check it and try again, or resend.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+async function resendOtp(){
+  if(!sb || !pendingAuthEmail) return;
+  clearAuthError();
+  const { error } = await sb.auth.resend({ type:'signup', email: pendingAuthEmail });
+  showAuthError(error ? error.message : 'New code sent -- check your email.');
+}
+function forgotPassword(){
+  if(!sb) return;
+  const email = (document.getElementById('auth-email').value || prompt('Enter your account email:') || '').trim().toLowerCase();
+  if(!EMAIL_RE.test(email)){ showAuthError('Enter a valid email address first.'); return; }
+  const redirectTo = location.href.replace(/[^/]*$/, '') + 'reset-password.html';
+  sb.auth.resetPasswordForEmail(email, { redirectTo }).then(({error})=>{
+    showAuthError(error ? error.message : 'Password reset email sent -- check your inbox.');
+  });
+}
+async function logOut(){
+  if(!sb) return;
+  await sb.auth.signOut();
+  location.reload();
+}
+function showAuthForm(){
+  document.getElementById('auth-loading').style.display = 'none';
+  document.getElementById('auth-form').style.display = 'block';
+}
+async function onAuthSuccess(){
+  const { data:{ user } } = await sb.auth.getUser();
+  currentUser = user;
+  await checkLocalDataImport();
+  await reloadAllUserData();
+  document.getElementById('auth-gate').classList.add('hidden');
+}
+async function initAuthGate(){
+  if(!sb){
+    showAuthForm();
+    showAuthError('App is not connected to a backend yet.');
+    return;
+  }
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session && session.user){
+    currentUser = session.user;
+    await checkLocalDataImport();
+    await reloadAllUserData();
+    document.getElementById('auth-gate').classList.add('hidden');
+  } else {
+    showAuthForm();
+  }
+}
+if(sb){
+  sb.auth.onAuthStateChange((event)=>{
+    if(event === 'SIGNED_OUT'){
+      currentUser = null;
+      document.getElementById('auth-gate').classList.remove('hidden');
+      showAuthForm();
+    }
+  });
+}
+initAuthGate();
+
+/* ================= FIRST-LOGIN LOCAL DATA IMPORT =================
+   Runs once per device (gated by corner_import_prompted), between a
+   successful login/signup and the rest of the app loading. Never silently
+   uploads or discards -- the user always chooses. */
+function hasLocalData(){
+  try{
+    if(JSON.parse(localStorage.getItem('corner_history')||'[]').length) return true;
+    if(JSON.parse(localStorage.getItem('corner_saved_sessions')||'[]').length) return true;
+    if(JSON.parse(localStorage.getItem('corner_favs')||'[]').length) return true;
+    const cc = JSON.parse(localStorage.getItem('corner_custom_combos')||'{}');
+    if((cc.beginner||[]).length || (cc.intermediate||[]).length || (cc.advanced||[]).length) return true;
+  }catch(e){}
+  return false;
+}
+let _importResolve = null;
+function checkLocalDataImport(){
+  return new Promise(resolve=>{
+    if(localStorage.getItem('corner_import_prompted') || !hasLocalData()){ resolve(); return; }
+    _importResolve = resolve;
+    document.getElementById('import-overlay').classList.add('show');
+  });
+}
+async function importLocalData(doImport){
+  document.getElementById('import-overlay').classList.remove('show');
+  localStorage.setItem('corner_import_prompted', '1');
+  if(doImport){
+    try{ await runLocalDataImport(); }
+    catch(e){ console.error('Import failed', e); alert('Some data could not be imported: '+(e.message||e)); }
+  }
+  if(_importResolve){ _importResolve(); _importResolve = null; }
+}
+async function runLocalDataImport(){
+  if(!sb || !currentUser) return;
+  const uid = currentUser.id;
+  try{
+    const hist = JSON.parse(localStorage.getItem('corner_history')||'[]');
+    if(hist.length){
+      const rows = hist.map(h=>({ user_id:uid, date:h.date, label:h.label, rounds:h.rounds, total_sec:h.totalSec, punches:h.punches, hardest:h.hardest, complete:h.complete, feel:h.feel }));
+      const { error } = await sb.from('session_history').upsert(rows, { onConflict:'user_id,date' });
+      if(error) console.error('history import failed', error);
+    }
+  }catch(e){ console.error('history import failed', e); }
+  try{
+    const saved = JSON.parse(localStorage.getItem('corner_saved_sessions')||'[]');
+    if(saved.length){
+      const rows = saved.map(s=>({ user_id:uid, name:s.name, seq:s.seq, goals:s.goals||[], source:s.source||null }));
+      const { error } = await sb.from('saved_sessions').insert(rows);
+      if(error) console.error('saved sessions import failed', error);
+    }
+  }catch(e){ console.error('saved sessions import failed', e); }
+  try{
+    const favs = JSON.parse(localStorage.getItem('corner_favs')||'[]');
+    if(favs.length){
+      const rows = favs.map(n=>({ user_id:uid, combo_key:n }));
+      const { error } = await sb.from('favorites').upsert(rows, { onConflict:'user_id,combo_key' });
+      if(error) console.error('favorites import failed', error);
+    }
+  }catch(e){ console.error('favorites import failed', e); }
+  try{
+    const cc = JSON.parse(localStorage.getItem('corner_custom_combos')||'{}');
+    const rows = [];
+    ['beginner','intermediate','advanced'].forEach(level=>{
+      (cc[level]||[]).forEach(c=>rows.push({ user_id:uid, level, n:c.n, name:c.name||'', tags:c.tags||[] }));
+    });
+    if(rows.length){
+      const { error } = await sb.from('custom_combos').insert(rows);
+      if(error) console.error('custom combos import failed', error);
+    }
+  }catch(e){ console.error('custom combos import failed', e); }
+  try{
+    const p = JSON.parse(localStorage.getItem('corner_profile2')||'{}');
+    if(p.name || p.skill || p.goal){
+      const { error } = await sb.from('users_profile').update({ name:p.name||'', skill:p.skill||'beginner', goal:p.goal||'fitness' }).eq('id', uid);
+      if(error) console.error('profile import failed', error);
+    }
+  }catch(e){ console.error('profile import failed', e); }
+}
+
+/* ================= LOAD ACCOUNT DATA =================
+   Runs once right after a session is confirmed (see initAuthGate/onAuthSuccess
+   above), fetching everything this account owns from Supabase into the same
+   module-level variables (history, savedSessions, favCombos, customCombos,
+   profile) the rest of the app already reads synchronously -- nothing else
+   in the render/combo-picking code needs to change. */
+async function reloadAllUserData(){
+  if(!sb || !currentUser) return;
+  const uid = currentUser.id;
+
+  try{
+    const { data, error } = await sb.from('session_history').select('*').eq('user_id', uid).order('date');
+    if(error) throw error;
+    history = (data||[]).map(r=>({ date:r.date, label:r.label, rounds:r.rounds, totalSec:r.total_sec, punches:r.punches, hardest:r.hardest, complete:r.complete, feel:r.feel }));
+  }catch(e){ console.error('load history failed', e); history = []; }
+
+  try{
+    const { data, error } = await sb.from('saved_sessions').select('*').eq('user_id', uid).order('created_at');
+    if(error) throw error;
+    savedSessions = (data||[]).map(r=>({ id:r.id, name:r.name, seq:r.seq, goals:r.goals||[], source:r.source }));
+  }catch(e){ console.error('load saved sessions failed', e); savedSessions = []; }
+
+  try{
+    const { data, error } = await sb.from('favorites').select('combo_key').eq('user_id', uid);
+    if(error) throw error;
+    favCombos = new Set((data||[]).map(r=>r.combo_key));
+  }catch(e){ console.error('load favorites failed', e); favCombos = new Set(); }
+
+  try{
+    const { data, error } = await sb.from('custom_combos').select('*').eq('user_id', uid).order('created_at');
+    if(error) throw error;
+    const cc = {beginner:[], intermediate:[], advanced:[]};
+    (data||[]).forEach(r=>{ (cc[r.level]=cc[r.level]||[]).push({ n:r.n, name:r.name, tags:r.tags||[], dbId:r.id }); });
+    customCombos = cc;
+  }catch(e){ console.error('load custom combos failed', e); }
+
+  try{
+    let { data, error } = await sb.from('users_profile').select('*').eq('id', uid).single();
+    if(error && error.code === 'PGRST116'){
+      // No row yet for this account -- create one now (explicit, in code we
+      // can see) instead of depending on a database trigger to have done it
+      // invisibly at signup time.
+      const created = await sb.from('users_profile').insert({ id: uid }).select().single();
+      data = created.data; error = created.error;
+    }
+    if(error) throw error;
+    profile = { name:data.name||'', skill:data.skill||'beginner', goal:data.goal||'fitness' };
+  }catch(e){ console.error('load profile failed', e); profile = {}; }
+
+  // Re-render everything now that real account data has replaced the empty defaults.
+  buildTplList();
+  renderComboList();
+  loadProfileUI();
+  renderHomeStats();
+  renderChallenge();
+}
+
 function hideSplashScreen() {
   const splash = document.getElementById('splash-screen');
   if (splash) {
@@ -1583,10 +1996,19 @@ function getVariantObj(type){
 }
 function tplDuration(t){ return Math.round(t.seq.reduce((a,r)=>a+r.work+r.rest,0)/60); }
 
-/* ================= STORAGE ================= */
-function loadCustom(){ try{ return JSON.parse(localStorage.getItem('corner_custom_combos')) || {beginner:[],intermediate:[],advanced:[]}; } catch(e){ return {beginner:[],intermediate:[],advanced:[]}; } }
-function saveCustom(d){ localStorage.setItem('corner_custom_combos', JSON.stringify(d)); }
-let customCombos = loadCustom();
+/* ================= STORAGE =================
+   All account data now lives in Supabase (session_history, saved_sessions,
+   favorites, custom_combos, users_profile -- see supabase/migrations/0001_init.sql),
+   scoped per-user by Row Level Security. These module-level variables start
+   empty and are populated once, right after login, by reloadAllUserData()
+   (defined near the auth code above) -- the #auth-gate overlay stays up
+   until that finishes, so nothing renders with stale/empty data visibly.
+   Each mutation below updates the in-memory copy immediately (so the UI
+   responds instantly) and fires the matching Supabase write in the
+   background, the same fire-and-forget pattern already used for idbSave(). */
+let customCombos = {beginner:[], intermediate:[], advanced:[]};
+let history = [];
+let savedSessions = [];
 const UNLOCKS = [
   {level:3, tier:'intermediate', n:"1-2, slip inside, 2", name:"Unlock: jab-cross, slip the return, cross", tags:['counter','defense'], freq:'normal'},
   {level:5, tier:'advanced',     n:"1-2-3-5-2", name:"Unlock: five-piece with lead uppercut inside", tags:['power','combo'], freq:'normal'},
@@ -1597,25 +2019,38 @@ function unlockedFor(tier){
   return UNLOCKS.filter(u=>u.tier===tier && lvl>=u.level).map(u=>({n:u.n,name:u.name,tags:u.tags,freq:u.freq,unlock:true}));
 }
 function poolFor(level){ return BUILTIN[level].concat(unlockedFor(level)).concat((customCombos[level]||[]).map(c=>({...c, custom:true}))); }
-function loadHistory(){ try{ return JSON.parse(localStorage.getItem('corner_history')) || []; } catch(e){ return []; } }
-function saveHistory(h){ localStorage.setItem('corner_history', JSON.stringify(h)); }
-let history = loadHistory();
 
-function loadSaved(){ try{ return JSON.parse(localStorage.getItem('corner_saved_sessions')) || []; } catch(e){ return []; } }
-function saveSaved(s){ localStorage.setItem('corner_saved_sessions', JSON.stringify(s)); }
-let savedSessions = loadSaved();
-function promptSaveSession(seq, goals){
+async function saveHistoryRecord(rec){
+  if(!sb || !currentUser) return;
+  const { error } = await sb.from('session_history').upsert({
+    user_id: currentUser.id, date: rec.date, label: rec.label, rounds: rec.rounds,
+    total_sec: rec.totalSec, punches: rec.punches, hardest: rec.hardest, complete: rec.complete, feel: rec.feel
+  }, { onConflict:'user_id,date' });
+  if(error) console.error('save history failed', error);
+}
+
+async function insertSavedSession(rec){
+  if(!sb || !currentUser) return { ...rec, id:'s'+Date.now() };
+  const { data, error } = await sb.from('saved_sessions').insert({
+    user_id: currentUser.id, name: rec.name, seq: rec.seq, goals: rec.goals||[], source: rec.source||null
+  }).select().single();
+  if(error){ console.error('save session failed', error); return { ...rec, id:'s'+Date.now() }; }
+  return { id:data.id, name:data.name, seq:data.seq, goals:data.goals||[], source:data.source };
+}
+async function promptSaveSession(seq, goals){
   const name = prompt("Name this session:");
   if(!name || !name.trim()) return;
-  savedSessions.push({ id:'s'+Date.now(), name:name.trim(), seq, goals: goals||[] });
-  saveSaved(savedSessions);
+  const saved = await insertSavedSession({ name:name.trim(), seq, goals:goals||[] });
+  savedSessions.push(saved);
   buildTplList();
   alert('Saved! Find it under "My Sessions" in the Sessions tab.');
 }
-function deleteSaved(id){
+async function deleteSaved(id){
   savedSessions = savedSessions.filter(s=>s.id!==id);
-  saveSaved(savedSessions);
   buildTplList();
+  if(!sb || !currentUser) return;
+  const { error } = await sb.from('saved_sessions').delete().eq('id', id).eq('user_id', currentUser.id);
+  if(error) console.error('delete saved session failed', error);
 }
 function startSaved(id){
   const s = savedSessions.find(x=>x.id===id);
@@ -1632,8 +2067,8 @@ let timerInterval = null;
 let currentStance = localStorage.getItem('corner_stance') || 'orthodox'; // for mirrorForSouthpaw
 let coachStyle = localStorage.getItem('corner_coach') || 'balanced';
 let smartDur = 30;
-let favCombos = new Set(JSON.parse(localStorage.getItem('corner_favs')||'[]'));
-let profile = JSON.parse(localStorage.getItem('corner_profile2')||'{}');
+let favCombos = new Set(); // populated from Supabase by reloadAllUserData()
+let profile = {};          // ditto
 let surveyAnswers = { hardest:null, complete:null, feel:null };
 let speechRate = parseFloat(localStorage.getItem('corner_rate')||'1.05');
 let selectedVoiceURI = localStorage.getItem('corner_voice_uri') || null;
@@ -1900,10 +2335,15 @@ function buildLibLevelRow(){
   document.getElementById('lib-level-row').innerHTML = levels.map(l=>`<div class="lib-level ${l.key===libLevel?'active':''}" onclick="setLibLevel('${l.key}')">${l.label}</div>`).join('');
 }
 function setLibLevel(k){ libLevel=k; buildLibLevelRow(); renderComboList(); }
-function toggleFav(n, btn){
-  if(favCombos.has(n)) favCombos.delete(n); else favCombos.add(n);
-  localStorage.setItem('corner_favs', JSON.stringify([...favCombos]));
+async function toggleFav(n, btn){
+  const wasFav = favCombos.has(n);
+  if(wasFav) favCombos.delete(n); else favCombos.add(n);
   btn.classList.toggle('on', favCombos.has(n));
+  if(!sb || !currentUser) return;
+  const { error } = wasFav
+    ? await sb.from('favorites').delete().eq('user_id', currentUser.id).eq('combo_key', n)
+    : await sb.from('favorites').upsert({ user_id:currentUser.id, combo_key:n }, { onConflict:'user_id,combo_key' });
+  if(error) console.error('favorite toggle failed', error);
 }
 /* Index-based lookup instead of interpolating the (user-editable) combo
    string into the onclick attribute -- avoids having to reason about escaping
@@ -1939,20 +2379,31 @@ function toggleTag(el){
   const t=el.dataset.tag;
   if(pendingTags.includes(t)) pendingTags=pendingTags.filter(x=>x!==t); else pendingTags.push(t);
 }
-function addCustomCombo(){
+async function addCustomCombo(){
   const n=document.getElementById('new-combo-n').value.trim();
   const name=document.getElementById('new-combo-name').value.trim();
   if(!n){ alert('Enter the combo numbers first, e.g. 1-2-3'); return; }
   const tags = pendingTags.length?[...pendingTags]:['combo'];
+  const combo = {n,name,tags};
   customCombos[libLevel]=customCombos[libLevel]||[];
-  customCombos[libLevel].push({n,name,tags});
-  saveCustom(customCombos);
+  customCombos[libLevel].push(combo);
   document.getElementById('new-combo-n').value=''; document.getElementById('new-combo-name').value='';
   document.querySelectorAll('#new-combo-tags .tag-opt').forEach(t=>t.classList.remove('on'));
   pendingTags=[];
   renderComboList();
+  if(!sb || !currentUser) return;
+  const { data, error } = await sb.from('custom_combos').insert({ user_id:currentUser.id, level:libLevel, n, name, tags }).select().single();
+  if(error){ console.error('add custom combo failed', error); alert('Could not save this combo: '+error.message); }
+  else combo.dbId = data.id;
 }
-function deleteCustom(level,idx){ customCombos[level].splice(idx,1); saveCustom(customCombos); renderComboList(); }
+async function deleteCustom(level,idx){
+  const combo = customCombos[level][idx];
+  customCombos[level].splice(idx,1);
+  renderComboList();
+  if(!sb || !currentUser || !combo || !combo.dbId) return;
+  const { error } = await sb.from('custom_combos').delete().eq('id', combo.dbId).eq('user_id', currentUser.id);
+  if(error) console.error('delete custom combo failed', error);
+}
 
 /* ================= PROGRESS ================= */
 const BADGES = [
@@ -2491,7 +2942,7 @@ function cbAdjustRest(delta){
 }
 function cbSetPace(sec){ cbPaceSec = sec; renderCustomBuild(); }
 
-function createCustomBuildSession(){
+async function createCustomBuildSession(){
   if(!cbRounds.length){ alert('Add at least one round first.'); return; }
   const seq = cbRounds.map((r,i)=>({
     type: r.type, work: r.work,
@@ -2500,9 +2951,8 @@ function createCustomBuildSession(){
   }));
   const nameInput = document.getElementById('cb-session-name');
   const name = (nameInput.value.trim()) || `Custom ${cbRounds.length}-Round`;
-  const rec = { id:'s'+Date.now(), name, seq, goals:[], source:'custom-builder' };
+  const rec = await insertSavedSession({ name, seq, goals:[], source:'custom-builder' });
   savedSessions.push(rec);
-  saveSaved(savedSessions);
   buildTplList();
 
   openSessionDetail({ name:rec.name, desc:'Built with the Custom Builder.', seq:rec.seq, goals:[], savedId:rec.id });
@@ -2532,14 +2982,16 @@ function loadProfileUI(){
   if(n){ n.value=profile.name||''; s.value=profile.skill||'beginner'; g.value=profile.goal||'fitness'; }
   applyProfileGreeting();
 }
-function saveProfile(){
+async function saveProfile(){
   profile = {
     name: document.getElementById('pf-name').value.trim(),
     skill: document.getElementById('pf-skill').value,
     goal: document.getElementById('pf-goal').value
   };
-  localStorage.setItem('corner_profile2', JSON.stringify(profile));
   applyProfileGreeting();
+  if(!sb || !currentUser) return;
+  const { error } = await sb.from('users_profile').update({ name:profile.name, skill:profile.skill, goal:profile.goal }).eq('id', currentUser.id);
+  if(error) console.error('save profile failed', error);
 }
 function applyProfileGreeting(){
   const g=document.querySelector('.greeting');
@@ -2571,16 +3023,11 @@ function idbOpen(){
   });
 }
 async function idbSave(rec){
+  // Short-term local resilience only (e.g. surviving a crash mid-session) --
+  // Supabase's session_history table is the durable, cross-device copy now,
+  // so there's no corresponding idbRestore()-into-history step anymore; that
+  // used to matter when localStorage/IDB were the only copy of a user's data.
   try{ const db=await idbOpen(); db.transaction('sessions','readwrite').objectStore('sessions').put(rec); }catch(e){}
-}
-async function idbRestore(){
-  // If localStorage got wiped (iOS eviction) but IDB survived, restore history from it
-  try{
-    if(history.length) return;
-    const db=await idbOpen();
-    const all=await new Promise((res,rej)=>{ const q=db.transaction('sessions').objectStore('sessions').getAll(); q.onsuccess=()=>res(q.result||[]); q.onerror=()=>rej(); });
-    if(all.length){ history=all.sort((a,b)=>a.date.localeCompare(b.date)); saveHistory(history); renderHomeStats(); renderChallenge(); }
-  }catch(e){}
 }
 
 /* ================= RESUME (interrupted session) ================= */
@@ -2896,7 +3343,7 @@ function submitSurvey(){
   const punches = Math.round((workSec/60) * 65);
   const rec = { date:new Date().toISOString(), label:state.label, rounds:roundsCompleted, totalSec, punches, hardest:surveyAnswers.hardest, complete:surveyAnswers.complete, feel:surveyAnswers.feel };
   history.push(rec);
-  saveHistory(history);
+  saveHistoryRecord(rec);
   idbSave(rec);
   clearSnapshot();
   renderChallenge();
@@ -3041,7 +3488,6 @@ setCoach(coachStyle, true);
 renderChallenge();
 renderOnboardingDemos();
 checkSnapshot();
-idbRestore();
 // Show onboarding on first ever visit
 if(!localStorage.getItem('corner_seen_intro')) showOnboarding();
 </script>
